@@ -1,0 +1,15 @@
+############ Commands used for Sqlite ##############
+
+1. Table Creation:
+CREATE TABLE MindSyncUsers(id INTEGER PRIMARY KEY AUTOINCREMENT, user_name TEXT NOT NULL, password TEXT NOT NULL, total_scores INT, best_score INT, worst_score INT, total_games INT, UNIQUE(user_name, password) ON CONFLICT FAIL);
+
+2. Inserting rows:
+INSERT INTO MindSyncUsers values (1, 'sanisha','pass1234', 1200, 800, 200, 3);
+INSERT INTO MindSyncUsers values (2, 'sani','pass1234', 1200, 800, 200, 3);
+
+3. Install sqlite.h header file
+sudo apt-get install sqlite3
+sudo apt-get install libsqlite3-dev
+
+4. Compiling C++ program to use Sqlite3:
+gcc database_cnxn.cpp -o a -lsqlite3
