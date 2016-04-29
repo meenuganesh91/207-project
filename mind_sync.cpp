@@ -1,4 +1,8 @@
-/* Multi threaded sever*/
+/*
+ * mindSync.cpp: Multhi-threaded TCP server to handle game requests from clients
+ * and starting a new thread for each game.
+*/
+
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -12,131 +16,105 @@
 #include <stdlib.h>
 #include <string>
 #include <pthread.h>
+
 using namespace std;
 
-
-#define	QUEUE   32
-#define	LENGHT	2000
+#define	QLEN 		32
+#define	LENGHT		2000
 #define NUM_THREADS 2000
 
-int num_player=0;
-
 struct thread_data{
-   int  thread_id;
+   int  thread_num;
    int 	sock_id;
 };
 
 struct thread_data thread_data_array[NUM_THREADS];
 
+int errexit(const char *format, ...);
+int passiveTCP(const char *service, int qlen);
 void *handler_funct(void *data);
 
+/*
+ * main: Main function to get client's requests and create threads for every
+ * new game.
+*/
 int main(int argc,char *argv[])
 {
-	int serversocket,slaveSocket;
-	struct sockaddr_in serverAddr,clientAddr;
-	socklen_t addr_len;
-	int enable = 1,t=0,n,portnum;
-	int att_int;
 	pthread_t p_thread[NUM_THREADS];
- 	 
-	//port num as argument
-	portnum = atoi(argv[1]);
-
-	//creating socket
-	if((serversocket = socket(PF_INET, SOCK_STREAM, 0))<0)
-	{perror("there is an error while creating server socket\n");return 0;}
-
-	//setting option for reuseing address
-	if (setsockopt(serversocket, SOL_SOCKET, SO_REUSEADDR,&enable, sizeof(enable)) < 0) 
-	{perror("Failed to set sock option SO_REUSEADDR");}
-
-	//settting address endpoint structure
-	serverAddr.sin_family = AF_INET;	
-	serverAddr.sin_addr.s_addr =INADDR_ANY;
-	serverAddr.sin_port = htons(portnum);
-
-	//binding socket	
-	if((bind(serversocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr)))<0)
-	{perror("ERROR while binding server socket");return 0;}
-
-	//setting socket in listen mode
-	if((listen(serversocket,QUEUE))<0)
-	{perror("ERROR while listening server socket");return 0;}
-
-
-	addr_len = sizeof(clientAddr);
-
+ 	pthread_attr_t ta;
 	
+	char *service;		/* service name or port number */
+	struct sockaddr_in clientAddr;
+	int msock, ssock;
+	socklen_t addr_len;
+	int thread_num = 0, n;
+	int num_players = 0;
+	
+	switch (argc) {
+		case 2:
+			service = argv[1];
+			break;
+		default:
+			errexit("Error in setting server: usage: mind_sync [port] \n");
+	}
+
+	fprintf(stdout, "**** Starting server at port: %s ****\n", service);
+
+	/* Create listening socket */
+	msock = passiveTCP(service, QLEN);
+
+	(void) pthread_attr_init(&ta);
+	(void) pthread_attr_setdetachstate(&ta, PTHREAD_CREATE_DETACHED); 	
+
+	/* Loop to get new connections */
 	while(1)
 	{		
 		//accepting new request from client
-		slaveSocket = accept(serversocket, (struct sockaddr *) &clientAddr, &addr_len);	
+		addr_len = sizeof(clientAddr);
+		ssock = accept(msock, (struct sockaddr *) &clientAddr, &addr_len);	
 	
-		if(slaveSocket<0)
-		{
-		perror("ERROR while accepting in server socket");
-		continue;
+		if (ssock < 0) {
+			if (errno == EINTR)
+				continue;
+			errexit("Failure in accepting connections \n");
 	 	}
 		
-		num_player++;
-		
+		num_players++;
 
-		if (num_player == 2 && t < NUM_THREADS)
-		{
-		
-		num_player=0;
-
-	
-		
-		//storing data to structure, which will be passing to new thread
-		thread_data_array[t].thread_id = t;
-	 	thread_data_array[t].sock_id =slaveSocket;
-
-		//creating a new thread
-		n=pthread_create(&p_thread[t],NULL,handler_funct,(void*)&thread_data_array[t]);
-
-	 	if(n!=0)
-		{
-		perror("ERROR while creating thread in server socket");
-		continue;
-		}
-	
-		t++;
-
-
-		}
+		if (num_players == 2 && thread_num < NUM_THREADS) {
+			fprintf(stdout, "\nGame number %d starting for 2 clients\n", thread_num);
 			
+			num_players = 0;
+			
+			//storing data to structure, which will be passing to new thread
+			thread_data_array[thread_num].thread_num = thread_num;
+	 		thread_data_array[thread_num].sock_id = ssock;
 
+			//creating a new thread
+			n = pthread_create(&p_thread[thread_num], NULL, handler_funct,
+				 (void*) &thread_data_array[thread_num]);
+	
+		 	if (n < 0) {
+				errexit("Error in creating thread in main server \n");
+			}
+
+			thread_num++;
+		}
 	}
-
-
-
-
-	
-
-	//thread join
-	for(int i = 0; i <NUM_THREADS; i++)
-    	{
-        	pthread_join(p_thread[i], NULL);
-    	}
-    
-
-
-	return 0;
-	
 }
 
-
+/*
+ * handler_funct: Handler function for handling each game request.
+*/
 void *handler_funct(void *data)
 {
-    
+    fprintf(stdout, "Thread function called for game.\n");
 	struct thread_data *my_data;
 	my_data = (struct thread_data *) data;
 	char buffer[LENGHT];
 	int sock;
 	
 	sock = my_data->sock_id;
-
 
 	printf("game is started\n");
 	fflush(stdout);
