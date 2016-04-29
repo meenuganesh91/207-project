@@ -1,4 +1,4 @@
-1. After extracting final_project, execute below command to compile server and client
+1. After cloning Username_Pwd, execute below command to compile server and client
 	make all 
 2. Open a terminal and execute
 	./TCPEchoServer-Thread 5000
