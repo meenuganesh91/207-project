@@ -1,0 +1,13 @@
+1. After extracting final_project, execute below command to compile server and client
+	make all 
+2. Open a terminal and execute
+	./TCPEchoServer-Thread 5000
+   Open another terminal and execute
+	 ./TCPEchoClient {ur ip} 5000
+3. Enter username and passwords in client and test. It should display "success" only for following username and pwd.
+	user : arthi pwd : arthi
+	user : priya pwd : priya
+	user : sanisha pwd : sanisha
+	user : meenu pwd : meenu
+	user : priyanka pwd : priyanka
+
