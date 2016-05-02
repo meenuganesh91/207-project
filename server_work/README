@@ -1,0 +1,33 @@
+######################## Server Testing ###########################
+
+1. To compile the server:
+> make
+
+2. To run the server:
+> ./mindSync 8777
+
+3. Clients:
+(terminal 1) : telnet localhost 8777
+username: sanisha
+password: pass1234
+
+(terminal 2) : telnet localhost 8777
+ username: gaurav
+ password: nanda
+
+** Game will start between the two players **
+
+
+
+(terminal 3) : telnet localhost 8777
+username: nanda
+password: gaurav
+
+(terminal 4) : telnet localhost 8777
+username: meenu
+password: ganesh
+
+** Game will start between these two players **
+
+**NOTE: There are many to-dos in the server. Please check the list here https://docs.google.com/document/d/1hfXpDL9L7vSEFG-fyRfpQHYDXXnWYFZ0YVbox7qZCPQ/edit.
+Currenly, I am facing issue in compiling the code on my system, it was working fine on MAC till yesterday. Trying to fix the issue. You can all try and check if its working there.
