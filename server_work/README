@@ -29,5 +29,13 @@ password: ganesh
 
 ** Game will start between these two players **
 
+===================== Some helpful sqlite tips==================
+
+Do install the following sqlite libraries:
+
+sudo apt-get install sqlite3
+sudo apt-get install libsqlite3-dev
+
+
 **NOTE: There are many to-dos in the server. Please check the list here https://docs.google.com/document/d/1hfXpDL9L7vSEFG-fyRfpQHYDXXnWYFZ0YVbox7qZCPQ/edit.
 Currenly, I am facing issue in compiling the code on my system, it was working fine on MAC till yesterday. Trying to fix the issue. You can all try and check if its working there.
