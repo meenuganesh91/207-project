@@ -71,8 +71,16 @@ class ProtectedSockets {
 			mutex.unlock();
 		}	
 		
+		bool search_active_user(string uname) {
+			mutex.lock();
+			auto iter = std::find_if(fds.begin(), fds.end(), [& uname](const std::pair<string, int>&p) {return p.first == uname;});
+			bool isFound = (iter != fds.end());
+			mutex.unlock();
+			return isFound;
+		}		
+
 		std::pair<string, int> operator [](int index) {
-	    return fds[index];	
+	    	return fds[index];	
 		}
 
 		void search_and_delete(std::pair<string, int>& player) {
@@ -135,6 +143,7 @@ public:
 	int total_games = 0;
 };
 
+// Callback function for select query
 static int select_callback(void* users, int argc, char **argv, char **colName) {
 	auto users_vector = (vector<User>*)users;
 	User user;
@@ -176,7 +185,7 @@ class Database {
 			char *errorCode = 0;
 			string select_query("SELECT * FROM ");
 			select_query.append(TABLENAME);
-	   	retCode = sqlite3_exec(db, select_query.c_str(), select_callback, (void *)users, &errorCode);
+	   		retCode = sqlite3_exec(db, select_query.c_str(), select_callback, (void *)users, &errorCode);
 			isLoaded = true;
 			db_lock.unlock();
 			return true;
@@ -265,7 +274,8 @@ sqlite3* Database::db = NULL;
 vector<User>* Database::users = new vector<User>();
 
 
-// Players who would be playing against each other.
+// Players who would be playing against each other. This
+// struct stores username and socket descriptor.
 struct GamePlayers {
 	pair<string, int> player1;
 	pair<string, int> player2;
@@ -287,6 +297,7 @@ int validateClientUsername(int sd, string& username) {
 	char outBuf[BUFSIZE + 1];
 	int isValid = 0;
 	int recvLen;
+	bool isActive = false;
 
 	User user;
 	while ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) {
@@ -294,6 +305,12 @@ int validateClientUsername(int sd, string& username) {
 		string username = trim(string(inBuf));
 		cout << "Entered username is: " << username << endl;
 		
+		// Check if user is already logged in, if yes, close the new connection
+		isActive = active_connections.search_active_user(username);
+		if (isActive) {
+			cout << "User already logged in.\n";
+			return isValid;
+		}
 		int user_index = Database::searchUserIndex(username);
 		user = (*(Database::users))[user_index];
 		if (user_index == -1) {
@@ -337,12 +354,12 @@ int validateClientUsername(int sd, string& username) {
 // Function to check for valid username and password combination.
 int userNameHandler(int fd) {
 	fprintf(stdout, "Checking for username and password\n");
-	
+		
 	// Validate username and password for three attempts.
 	string username;
-	// TODO(sanisha): Make sure if one user is already logged in, don't let him login again.
+	// Make sure if one user is already logged in, don't let him login again.
 	if (!validateClientUsername(fd, username)) {
-		fprintf(stdout, "Wrong username and password, exiting \n");
+		fprintf(stdout, "Wrong username and password or user already logged in, exiting \n");
 		if (!pthread_detach(pthread_self())) {
 			fprintf(stdout, "Thread detached for the given sock_id: %d \n", fd); 
 		}
