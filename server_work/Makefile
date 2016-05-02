@@ -11,7 +11,7 @@ TARGETS=mindSync
 all: $(TARGETS)
 
 mindSync: mind_sync.o mind_sync_server.o server_common.o
-	$(CC) $(CCFLAGS) -pthread -lsqlite3 -o $@ $^
+	$(CC) $(CCFLAGS) -pthread -o $@ $^ -lsqlite3
 
 mind_sync.o: mind_sync.cpp server_common.o
 	$(CC) $(CCFLAGS) -c $<
