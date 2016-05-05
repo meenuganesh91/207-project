@@ -570,13 +570,36 @@ void* gameHandler(void* game_players) {
 		cout << "Read from username:fd = " << username2 << ":" << fd2 << " response: " << response2 << endl;
 		inBuf[0] = '\0';
 
-		if (response1.compare(response2) == 0) {
-			game_score += (word_try_count++ * 100);
-			new_word_wanted = false;
-		}	else {
-			new_word_wanted = true;
+		//compare words
+
+		//remove white spaces for response1
+		response1.erase(0, response1.find_first_not_of(' '));       //prefixing spaces
+		response1.erase(response1.find_last_not_of(' ')+1);
+	
+	
+		for(unsigned int i = 0; i < response1.length(); i++)
+		{
+			response1[i] = toupper(response1[i]);
 		}
-		
+
+		//remove white spaces for response1
+		response2.erase(0, response2.find_first_not_of(' '));       //prefixing spaces
+		response2.erase(response2.find_last_not_of(' ')+1);
+	
+	
+		for(unsigned int i = 0; i < response2.length(); i++)
+		{
+			response2[i] = toupper(response2[i]);
+		}
+	
+		if (response1==response2)
+		{
+			game_score += (word_try_count++ * 100);
+			new_word_wanted = false;}
+		else 
+			{new_word_wanted = true;}
+
+
 		cout << "\n*********************\n";
 		cout << "Dumping state: " << endl;
 		active_connections.dump_state();	
