@@ -3,6 +3,9 @@ import wxversion
 wxversion.select("3.0")
 import wx
 
+import socket
+import sys
+
 #The main panel
 class MainPanel(wx.Frame):
   
@@ -41,16 +44,31 @@ class MainPanel(wx.Frame):
         self.Show()     
         
     def OnConnectInit(self, e): 
+	'''self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER)
+        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER)'''
 	print 'User name: ', self.tc1.GetValue()
 	print 'Password: ', self.tc2.GetValue()
 	serverFormat = self.tc1.GetValue()+':'+self.tc2.GetValue()
+	
 	print 'Server Format: ', serverFormat
-        print "You are now logged in."
-	#app2 = wx.App()
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	
+	host = socket.gethostbyname(sys.argv[1])
+	port = int(sys.argv[2])
+	serverAddress = (host,port)
+	sock.connect(serverAddress)
+	sock.send(self.tc1.GetValue())
+	errCode = sock.recv(1024)
+	print "Error code : ", errCode
+	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" ):
+		loginbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
+		signupbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
+
+        #print "You are now logged in."
+	
 	app2 = SecondPanel(None, title = 'Mind Sync')
 	self.Hide()
 	app2.Show()
-	#app2.MainLoop()
         self.Close(True) 
 
 #The second panel to be shown
