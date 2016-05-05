@@ -570,7 +570,7 @@ void* gameHandler(void* game_players) {
 		cout << "Read from username:fd = " << username2 << ":" << fd2 << " response: " << response2 << endl;
 		inBuf[0] = '\0';
 
-		if (response1.compare(response2) == 0) {
+		if (tolower(response1).compare(tolower(response2)) == 0) {
 			game_score += (word_try_count++ * 100);
 			new_word_wanted = false;
 		}	else {
