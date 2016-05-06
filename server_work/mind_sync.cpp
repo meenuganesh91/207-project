@@ -498,7 +498,12 @@ void* gameHandler(void* game_players) {
 	string word = "";
 	int word_try_count = 1;
 	signal(SIGPIPE, SIG_IGN);
+	vector<string> responseVal;
+	bool same_response_flag=false;
+
 	while(1) {
+
+		if(!same_response_flag){
 		// Check if both the sockets are alive/valid.
 		int errorCode1 = -1, errorCode2 = -1;
 		socklen_t len = sizeof (errorCode1);
@@ -522,6 +527,9 @@ void* gameHandler(void* game_players) {
 		// Send the same word to both the sockets and wait for responses.
 		cout << "Going to write to " << "username:fd = " << username1 << ":" << fd1 << endl;
 		errno = 0;
+		
+		
+	
 		write(fd1, word.c_str(), word.length());
 		if (errno != 0) {
 			write(fd2, "GAME_END", 8);
@@ -537,6 +545,8 @@ void* gameHandler(void* game_players) {
 
 		errno = 0;
 		cout << "Going to write to " << "username:fd = " << username2 << ":" << fd2 << endl;
+		
+		
 		write(fd2, word.c_str(), word.length());
 		if (errno != 0) {
 			write(fd1, "GAME_END", 8);
@@ -551,7 +561,18 @@ void* gameHandler(void* game_players) {
 		// TODO(sanisha): Tell the client to put a 10 sec wait. Server
 		// need not do anything. If user does not responds back in 10
     // sec, client should send NO_RESPONSE;
+		}
+		//}
+		else{
+			write(fd1, "Select a different answer", 50);
+		
+			write(fd2, "Select a different answer", 50);
+
+
+
+		}
 		int recvLen;
+		
 		cout << "Going to read from " << "username:fd = " << username1 << ":" << fd1 << endl;
 		while((recvLen = read(fd1, inBuf, BUFSIZE)) > 0) {
 			inBuf[recvLen] = '\0';
@@ -594,10 +615,32 @@ void* gameHandler(void* game_players) {
 	
 		if (response1==response2)
 		{
-			game_score += (word_try_count++ * 100);
-			new_word_wanted = false;}
-		else 
-			{new_word_wanted = true;}
+			/*if(find(responseVal.begin(),responseVal.end(),string(response1)))
+			{
+				same_response_flag=true;
+			
+			}*/
+			int temp_flag = 0;
+			vector<string>::const_iterator i;
+			for(i=responseVal.begin();i!=responseVal.end();i++){
+				cout<<(*i)<<endl;
+				if(response1==*i){
+				temp_flag=1;		
+				same_response_flag=true;	
+				}	
+			}
+			if(temp_flag==0){
+				same_response_flag = false;
+				game_score += (word_try_count++ * 100);
+				new_word_wanted = false;
+				responseVal.push_back(string(response1));
+			}
+		}
+		else {
+			same_response_flag = false;
+			new_word_wanted = true;
+			responseVal.clear();
+		}
 
 
 		cout << "\n*********************\n";
