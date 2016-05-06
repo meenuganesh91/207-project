@@ -11,7 +11,7 @@ class MainPanel(wx.Frame):
   
     def __init__(self, parent, title):
         super(MainPanel, self).__init__(parent, title=title, 
-            size=(300, 250))
+            size=(500, 500))
         panel = wx.Panel(self)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -21,9 +21,9 @@ class MainPanel(wx.Frame):
         userSizer = wx.StaticText(panel, label="User name")
         passSizer = wx.StaticText(panel, label="Password")
 	
-	loginbut = wx.Button(panel, label='Login', pos=(20, 100))
+	loginbut = wx.Button(panel, label='Login', pos=(50, 200))
 
-	signupbut = wx.Button(panel, label='Sign up', pos=(190, 100))
+	signupbut = wx.Button(panel, label='Sign up', pos=(290, 200))
 
 	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER)
 
@@ -41,14 +41,17 @@ class MainPanel(wx.Frame):
         hbox.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=15)
         panel.SetSizer(hbox)
         self.Centre()
-        self.Show()     
+        self.Show()  
+
+    #def OnLogin(self, e):
+	
         
     def OnConnectInit(self, e): 
-	'''self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER)
-        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER)'''
+	
 	print 'User name: ', self.tc1.GetValue()
 	print 'Password: ', self.tc2.GetValue()
-	serverFormat = self.tc1.GetValue()+':'+self.tc2.GetValue()
+	code = ''
+	serverFormat = str(code)+':'+self.tc1.GetValue()+':'+self.tc2.GetValue()
 	
 	print 'Server Format: ', serverFormat
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -57,7 +60,7 @@ class MainPanel(wx.Frame):
 	port = int(sys.argv[2])
 	serverAddress = (host,port)
 	sock.connect(serverAddress)
-	sock.send(self.tc1.GetValue())
+	sock.send(serverFormat)
 	errCode = sock.recv(1024)
 	print "Error code : ", errCode
 	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" ):
@@ -76,21 +79,37 @@ class SecondPanel(wx.Frame):
 
     def __init__(self, parent, title):
         super(SecondPanel, self).__init__(parent, title=title, 
-            size=(300, 250))
+            size=(550, 500))
         pnl = wx.Panel(self)
+
+	self.SetBackgroundColour((0,0,255))
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
-	wordSizer = wx.StaticText(pnl, label="Apple")
-	enterbut = wx.Button(pnl, label='Enter', pos=(100, 100))
 
-	self.word = wx.TextCtrl(pnl, style = wx.TE_PROCESS_ENTER)
+	promptSizer = wx.StaticText(pnl, -1,
+		label = "Enter the word that pops up in your mind on reading", pos = (20, 10))
+	font = wx.Font(15,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
+	promptSizer.SetFont(font)
+	promptSizer.SetForegroundColour((0,0,255))
+
+	wordSizer = wx.StaticText(pnl, -1,label = "Dog", pos = (220, 50))
+	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
+	wordSizer.SetFont(font)
+	wordSizer.SetForegroundColour((255,0,0))
+	
+	enterbut = wx.Button(pnl, label='Enter', pos=(215, 200), size = (100,50))
+
+	self.word = wx.TextCtrl(pnl, style = wx.TE_PROCESS_ENTER, pos = (175,100), 
+	size = (200,100))
 
 	enterbut.Bind(wx.EVT_BUTTON, self.OnButtonPress)
+	
+	timer = wx.Timer(pnl)
+	timer.Start(100)	
 
-	fgs.AddMany([(wordSizer), (self.word, 1, wx.EXPAND)])
-
+	
 	hbox.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=15)
         pnl.SetSizer(hbox)
         self.Centre()
