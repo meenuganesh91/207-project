@@ -1,4 +1,7 @@
-#The client gui application
+"""
+The client gui application
+"""
+
 import wxversion
 wxversion.select("3.0")
 import wx
@@ -6,9 +9,13 @@ import wx
 import socket
 import sys
 
-#The main panel
+"""
+The main panel that gives the login/signup information
+"""
 class MainPanel(wx.Frame):
-  
+    """
+    The constructor for the main panel that displays the necessary widgets
+    """
     def __init__(self, parent, title):
         super(MainPanel, self).__init__(parent, title=title, 
             size=(500, 500))
@@ -74,7 +81,9 @@ class MainPanel(wx.Frame):
 	app2.Show()
         self.Close(True) 
 
-#The second panel to be shown
+"""
+The second panel that shows the word and the other player's response and takes in the input 
+"""
 class SecondPanel(wx.Frame):
 
     def __init__(self, parent, title):
