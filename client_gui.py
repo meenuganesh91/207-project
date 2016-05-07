@@ -25,22 +25,27 @@ class MainPanel(wx.Frame):
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
 
-        userSizer = wx.StaticText(panel, label="User name")
-        passSizer = wx.StaticText(panel, label="Password")
-	
-	loginbut = wx.Button(panel, label='Login', pos=(50, 200))
+        userSizer = wx.StaticText(panel, label="User name", pos = (70, 250))
+        passSizer = wx.StaticText(panel, label="Password", pos = (70, 300))
 
-	signupbut = wx.Button(panel, label='Sign up', pos=(290, 200))
+	png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+	wx.StaticBitmap(panel, 1, png, (125, 5), (png.GetWidth(), png.GetHeight()))	
 
-	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER)
+	loginbut = wx.Button(panel, label='Login', pos=(50, 400))
 
-        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER)
+	signupbut = wx.Button(panel, label='Sign up', pos=(350, 400))
+
+	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER, pos = (300, 250))
+	bsizer = wx.BoxSizer()
+	bsizer.Add(self.tc1, 1, wx.EXPAND)
+
+        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (300,300))
 
 	loginbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
 	signupbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
 
-        fgs.AddMany([(userSizer), (self.tc1, 1, wx.EXPAND), (passSizer), 
-            (self.tc2, 1, wx.EXPAND)])
+        '''fgs.AddMany([(userSizer), (self.tc1, 1, wx.EXPAND), (passSizer), 
+            (self.tc2, 1, wx.EXPAND)])'''
 
         fgs.AddGrowableRow(2, 1)
         fgs.AddGrowableCol(1, 1)
