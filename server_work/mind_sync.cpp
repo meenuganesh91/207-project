@@ -13,6 +13,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <boost/algorithm/string/predicate.hpp>
 
 #include <sqlite3.h>
 #include <string.h>
@@ -233,15 +234,16 @@ class Database {
 			}
 		}
 		
+		// Update new user stats
 		static bool UpdateUser(const User& user) {
 			db_lock.lock();
 			for(auto& u : *users) {
 				if (u.username == user.username) {
 					u.password = user.password;
-					u.total_score = user.total_score;
-					u.best_score = user.best_score;
-					u.worst_score = user.worst_score;
-					u.total_games = user.total_games;
+					u.total_score = user.total_score + u.total_score;
+					u.best_score = (user.best_score > u.best_score) ? user.best_score : u.best_score;
+					u.worst_score = user.worst_score < u.worst_score ? user.worst_score : u.worst_score;
+					u.total_games = user.total_games + u.total_games;
 					db_lock.unlock();
 					return true;
 				}
@@ -313,7 +315,7 @@ int validateClientUsername(int sd, string& username) {
     }
 
     string input = trim(string(inBuf));
-    if (input.compare("1")==0) {
+    if (input.compare("1") == 0) {
 		int userFlag = 0;
 		while(1) {
 	    	strcpy(outBuf, "Enter the username you wish to register:\n");
@@ -424,6 +426,7 @@ int validateClientUsername(int sd, string& username) {
 		username.append(user.username);
 		return isValid;
 	}
+	return isValid;
 }
 
 // Function to check for valid username and password combination.
@@ -489,6 +492,15 @@ void* gameHandler(void* game_players) {
 	string username1 = gp.player1.first;
 	string username2 = gp.player2.first;
 
+	// Save user stats
+	User user1;
+	User user2;
+
+	user1.username = username1;
+	user2.username = username2;
+
+	int game_count = 1;
+
 	char inBuf[BUFSIZE + 1];
 	int recvLen;
 
@@ -502,8 +514,6 @@ void* gameHandler(void* game_players) {
 	bool same_response_flag=false;
 
 	while(1) {
-
-		if(!same_response_flag){
 		// Check if both the sockets are alive/valid.
 		int errorCode1 = -1, errorCode2 = -1;
 		socklen_t len = sizeof (errorCode1);
@@ -515,21 +525,17 @@ void* gameHandler(void* game_players) {
 		// getsockopt (fd2, SOL_SOCKET, SO_ERROR, &errorCode2, &len) << endl;
 
 		bool game_done = false;
-
 		vector<int> arr;
 		if (new_word_wanted) {
 			word_try_count = 1;
 	    	int pos = randomPosition(arr);
       		word = words[pos];
-      		cout << word << endl;
+      		cout << "Sent word: " << word << endl;
 		} 
 
 		// Send the same word to both the sockets and wait for responses.
 		cout << "Going to write to " << "username:fd = " << username1 << ":" << fd1 << endl;
 		errno = 0;
-		
-		
-	
 		write(fd1, word.c_str(), word.length());
 		if (errno != 0) {
 			write(fd2, "GAME_END", 8);
@@ -542,11 +548,8 @@ void* gameHandler(void* game_players) {
 			active_connections.add_free_player(gp.player2);
 			break;
 		}
-
 		errno = 0;
 		cout << "Going to write to " << "username:fd = " << username2 << ":" << fd2 << endl;
-		
-		
 		write(fd2, word.c_str(), word.length());
 		if (errno != 0) {
 			write(fd1, "GAME_END", 8);
@@ -560,17 +563,8 @@ void* gameHandler(void* game_players) {
 		// Wait for 15 seconds.
 		// TODO(sanisha): Tell the client to put a 10 sec wait. Server
 		// need not do anything. If user does not responds back in 10
-    // sec, client should send NO_RESPONSE;
-		}
+    	// sec, client should send NO_RESPONSE;
 		//}
-		else{
-			write(fd1, "Select a different answer", 50);
-		
-			write(fd2, "Select a different answer", 50);
-
-
-
-		}
 		int recvLen;
 		
 		cout << "Going to read from " << "username:fd = " << username1 << ":" << fd1 << endl;
@@ -592,56 +586,39 @@ void* gameHandler(void* game_players) {
 		inBuf[0] = '\0';
 
 		//compare words
-
-		//remove white spaces for response1
+		//remove white spaces for responses
 		response1.erase(0, response1.find_first_not_of(' '));       //prefixing spaces
 		response1.erase(response1.find_last_not_of(' ')+1);
-	
-	
-		for(unsigned int i = 0; i < response1.length(); i++)
-		{
-			response1[i] = toupper(response1[i]);
-		}
 
-		//remove white spaces for response1
 		response2.erase(0, response2.find_first_not_of(' '));       //prefixing spaces
 		response2.erase(response2.find_last_not_of(' ')+1);
 	
-	
-		for(unsigned int i = 0; i < response2.length(); i++)
-		{
-			response2[i] = toupper(response2[i]);
-		}
-	
-		if (response1==response2)
-		{
-			/*if(find(responseVal.begin(),responseVal.end(),string(response1)))
-			{
-				same_response_flag=true;
-			
-			}*/
+		cout << "After erasing, re1: "<< response1 << " re2: " << response2 << endl;
+		if (boost::iequals(response1,response2)) {
 			int temp_flag = 0;
-			vector<string>::const_iterator i;
-			for(i=responseVal.begin();i!=responseVal.end();i++){
-				cout<<(*i)<<endl;
-				if(response1==*i){
-				temp_flag=1;		
-				same_response_flag=true;	
-				}	
+			// Check if it is repeated answer
+			vector<string>::const_iterator iter;
+			for(iter = responseVal.begin(); iter !=responseVal.end(); iter++) {
+				if(response1 == *iter) {
+					temp_flag = 1;		
+					same_response_flag = true;
+					cout << "The response is repeated, send new response" << endl;
+					break;	
+				}
 			}
-			if(temp_flag==0){
+			if (temp_flag == 0) {
+				cout << "Different response" << endl;
 				same_response_flag = false;
 				game_score += (word_try_count++ * 100);
 				new_word_wanted = false;
-				responseVal.push_back(string(response1));
+				responseVal.push_back(response1);				
 			}
-		}
-		else {
+		} else {
 			same_response_flag = false;
 			new_word_wanted = true;
 			responseVal.clear();
+			cout << "No match in responses" << endl;
 		}
-
 
 		cout << "\n*********************\n";
 		cout << "Dumping state: " << endl;
@@ -650,13 +627,25 @@ void* gameHandler(void* game_players) {
 		cout << "\n*********************\n";
 
 		cout << "Game score is " << game_score << endl;
+		user1.total_score = game_score;
+		user2. total_score = game_score;
+
+		user1.total_games = game_count;
+		user2.total_games = game_count;
+		
+		//TODO: We need to update user only once game ends
+		//Database::UpdateUser(user1);
+		//Database::UpdateUser(user2);
 	}
 	return NULL;
 }
 
 void* syncMemoryToDb(void*) {
-	sleep(60);
-	Database::syncToDb();
+	while(1) {
+		sleep(30);
+		cout << "##### Sinking game state to database for all users" << endl;
+		Database::syncToDb();
+	}
 }
 
 /*
