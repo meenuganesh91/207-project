@@ -2,8 +2,8 @@
 The client gui application
 """
 
-import wxversion
-wxversion.select("3.0")
+#import wxversion
+#wxversion.select("3.0")
 import wx
 
 import socket
@@ -41,8 +41,8 @@ class MainPanel(wx.Frame):
 
         self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (300,300))
 
-	loginbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
-	signupbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
+	loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
+	signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
 
         '''fgs.AddMany([(userSizer), (self.tc1, 1, wx.EXPAND), (passSizer), 
             (self.tc2, 1, wx.EXPAND)])'''
@@ -55,14 +55,18 @@ class MainPanel(wx.Frame):
         self.Centre()
         self.Show()  
 
-    #def OnLogin(self, e):
-	
+    def OnLogin(self, e):
+	code = '2'
+        self.OnConnectInit(code)
         
-    def OnConnectInit(self, e): 
+    def OnSignup(self, e):
+	code = '1'
+	self.OnConnectInit(code)        
+
+    def OnConnectInit(self,code): 
 	
 	print 'User name: ', self.tc1.GetValue()
 	print 'Password: ', self.tc2.GetValue()
-	code = ''
 	serverFormat = str(code)+':'+self.tc1.GetValue()+':'+self.tc2.GetValue()
 	
 	print 'Server Format: ', serverFormat
@@ -72,7 +76,9 @@ class MainPanel(wx.Frame):
 	port = int(sys.argv[2])
 	serverAddress = (host,port)
 	sock.connect(serverAddress)
-	sock.send(serverFormat)
+	sock.recv(1024)
+        sock.send(serverFormat)
+        
 	errCode = sock.recv(1024)
 	print "Error code : ", errCode
 	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" ):
