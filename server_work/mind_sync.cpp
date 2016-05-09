@@ -316,6 +316,7 @@ int validateClientUsername(int sd, string& username) {
 
     string input = trim(string(inBuf));
     if (input.compare("1") == 0) {
+                cout << "The input:" << input << endl;
 		int userFlag = 0;
 		while(1) {
 	    	strcpy(outBuf, "Enter the username you wish to register:\n");
@@ -370,6 +371,7 @@ int validateClientUsername(int sd, string& username) {
     }
 	// Existing user login
     if (input.compare("2") == 0) {
+		cout << "Checking for username for option 2" << endl;
 		strcpy(outBuf, "Enter Credentials to start the game:\n");
 		WRITE_OUT_BUFFER
 
