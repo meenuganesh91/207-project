@@ -17,9 +17,12 @@ class MainPanel(wx.Frame):
     The constructor for the main panel that displays the necessary widgets
     """
     def __init__(self, parent, title):
+
         super(MainPanel, self).__init__(parent, title=title, 
             size=(500, 500))
         panel = wx.Panel(self)
+
+	self.conn = False
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -31,9 +34,9 @@ class MainPanel(wx.Frame):
 	png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
 	wx.StaticBitmap(panel, 1, png, (125, 5), (png.GetWidth(), png.GetHeight()))	
 
-	loginbut = wx.Button(panel, label='Login', pos=(50, 400))
+	self.loginbut = wx.Button(panel, label='Login', pos=(50, 400))
 
-	signupbut = wx.Button(panel, label='Sign up', pos=(350, 400))
+	self.signupbut = wx.Button(panel, label='Sign up', pos=(350, 400))
 
 	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER, pos = (300, 250))
 	bsizer = wx.BoxSizer()
@@ -41,8 +44,8 @@ class MainPanel(wx.Frame):
 
         self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (300,300))
 
-	loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
-	signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
+	self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
+	self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
 
         '''fgs.AddMany([(userSizer), (self.tc1, 1, wx.EXPAND), (passSizer), 
             (self.tc2, 1, wx.EXPAND)])'''
@@ -70,27 +73,31 @@ class MainPanel(wx.Frame):
 	serverFormat = str(code)+':'+self.tc1.GetValue()+':'+self.tc2.GetValue()
 	
 	print 'Server Format: ', serverFormat
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	
-	host = socket.gethostbyname(sys.argv[1])
-	port = int(sys.argv[2])
-	serverAddress = (host,port)
-	sock.connect(serverAddress)
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+	if self.conn == False:	
+		host = socket.gethostbyname(sys.argv[1])
+		port = int(sys.argv[2])
+		serverAddress = (host,port)
+		sock.connect(serverAddress)
+		self.conn = True
 	sock.recv(1024)
         sock.send(serverFormat)
         
-	errCode = sock.recv(1024)
-	print "Error code : ", errCode
+	#errCode = sock.recv(1024)
+	#print "Error code : ", errCode
+	errCode = "USER_NAME_ERROR"
 	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" ):
-		loginbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
-		signupbut.Bind(wx.EVT_BUTTON, self.OnConnectInit)
+		self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
+		self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
 
         #print "You are now logged in."
-	
-	app2 = SecondPanel(None, title = 'Mind Sync')
-	self.Hide()
-	app2.Show()
-        self.Close(True) 
+	else:
+		app2 = SecondPanel(None, title = 'Mind Sync')
+		self.Hide()
+		app2.Show()
+        	self.Close(True) 
 
 """
 The second panel that shows the word and the other player's response and takes in the input 
