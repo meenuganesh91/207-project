@@ -22,17 +22,17 @@ class MainPanel(wx.Frame):
             size=(500, 500))
         panel = wx.Panel(self)
 
-	self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	host = socket.gethostbyname(sys.argv[1])
+	#self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	'''host = socket.gethostbyname(sys.argv[1])
 	mPort = 8777
 	sPort = 8778
 	mAddress = (host,mPort)
-	sAddress = (host,sPort)
+	sAddress = (host,sPort)'''
 
-	try:
+	'''try:
 		self.sock.connect(mAddress)
 	except:
-		self.sock.connect(sAddress)
+		self.sock.connect(sAddress)'''
 	
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -84,18 +84,18 @@ class MainPanel(wx.Frame):
 	
 	print 'Server Format: ', serverFormat
 
-	self.sock.recv(1024)
-        self.sock.send(serverFormat)
+	sock.recv(1024)
+        sock.send(serverFormat)
         
-	errCode = self.sock.recv(1024)
+	errCode = sock.recv(1024)
 	print "Error code : ", errCode
 	#errCode = "USER_NAME_ERROR"
-	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" ):
+	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" or errCode == "USER_NAME_TAKEN" or errCode == "ALREADY_LOGGED_IN"):
 		self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
 		self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
-
-        #print "You are now logged in."
+	
 	else:
+		print "Success going to second panel"
 		app2 = SecondPanel(None, title = 'Mind Sync')
 		self.Hide()
 		app2.Show()
@@ -111,9 +111,9 @@ class SecondPanel(wx.Frame):
             size=(550, 500))
         pnl = wx.Panel(self)
 
-	self.SetBackgroundColour("Yellow")
-
         hbox = wx.BoxSizer(wx.HORIZONTAL)
+
+	print "Second panel"
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
 
@@ -122,8 +122,16 @@ class SecondPanel(wx.Frame):
 	font = wx.Font(15,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	promptSizer.SetFont(font)
 	promptSizer.SetForegroundColour((0,0,255))
+
+	response = sock.recv(1024)
+
+	words = response.split("_")
+
+	word = words[0]
+
+	print "Word is" + word
 	
-	wordSizer = wx.StaticText(pnl, -1,label = "Dog", pos = (220, 50))
+	wordSizer = wx.StaticText(pnl, -1,label = word, pos = (220, 50))
 	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	wordSizer.SetFont(font)
 	wordSizer.SetForegroundColour((255,0,0))
@@ -132,6 +140,7 @@ class SecondPanel(wx.Frame):
 
 	self.word = wx.TextCtrl(pnl, style = wx.TE_PROCESS_ENTER, pos = (175,100), 
 	size = (200,100))
+
 
 	enterbut.Bind(wx.EVT_BUTTON, self.OnButtonPress)
 	
@@ -150,6 +159,18 @@ class SecondPanel(wx.Frame):
 
 
 if __name__ == '__main__':
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = socket.gethostbyname(sys.argv[1])
+    mPort = 8777
+    sPort = 8778
+    mAddress = (host,mPort)
+    sAddress = (host,sPort)
+
+    try:
+	sock.connect(mAddress)
+    except:
+	sock.connect(sAddress)
   
     app = wx.App()
     MainPanel(None, title='Mind Sync')
