@@ -13,6 +13,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <sstream>
 
 #include <sqlite3.h>
 #include <string.h>
@@ -30,7 +31,6 @@
 #define	QLEN 		32
 #define	LENGTH		2000
 #define NUM_THREADS 2000
-#define SUCCESS	"Success"
 
 // TODO(sanisha): Make sure these are the same strings read by client.
 // This would act as protocol between client and server.
@@ -38,7 +38,10 @@
 #define PASSWORDERROR	"PASSWORD_ERROR"
 #define USERNAMEVALID	"USER_NAME_VALID"
 #define PASSWORDVALID	"PASSWORD_VALID"
+#define DUPLICATEUSER	"USER_ALREADY_LOGGED"
+#define USERNAMETAKEN	"USER_NAME_TAKEN"
 #define GAME_END "GAME_END"
+#define SUCCESS	"SUCCESS"
 
 #define WRITE_OUT_BUFFER if (write(sd, outBuf, strlen(outBuf)) < 0) { errexit("Error in writing to the socket\n"); }
 
@@ -60,6 +63,19 @@ int errexit(const char *format, ...);
 int passiveTCP(const char *service, int qlen);
 int validateClientUsername(int sd, string& username);
 string trim(string);
+
+// You could also take an existing vector as a parameter.
+vector<string> split(string str, char delimiter) {
+  vector<string> internal;
+  stringstream ss(str); // Turn the string into a stream.
+  string tok;
+  
+  while(getline(ss, tok, delimiter)) {
+    internal.push_back(tok);
+  }
+  
+  return internal;
+}
 
 // Class for lock protected operations on socket descriptors.
 // This also serves as the current state of the server.
@@ -346,44 +362,53 @@ int validateClientUsername(int sd, string& username) {
     //bool isActive = false;
     User user;
     int successFlag = 0;
-    string passWord;
+    //string passWord;
     string repassWord;	
-    string userName;
+    //string userName;
     string msg;
 
-    strcpy(outBuf, "Enter 1 for New User or 2 if already registered\n");
+    strcpy(outBuf, "Enter the username:password combination\n");
     write(sd, outBuf, strlen(outBuf));
     if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
 			inBuf[recvLen] = '\0';        
     }
 
-    string input = trim(string(inBuf));
+	std::vector<string> clInput = split(inBuf, ':');
+	string input = trim(clInput[0]);
+	string userName = trim(clInput[1]);
+	string passWord = trim(clInput[2]);
+
+	cout << "input: " << input << endl;
+	cout << "username: " << userName << endl;
+	cout << "password: " << passWord << endl;
+    //string input = trim(string(inBuf));
     if (input.compare("1") == 0) {
 			int userFlag = 0;
-			while(1) {
-	    	strcpy(outBuf, "Enter the username you wish to register:\n");
-	    	WRITE_OUT_BUFFER
-	    	if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-					inBuf[recvLen] = '\0';        
-	    	}
-	    	userName = trim(string(inBuf));
+			//while(1) {
+	    	//strcpy(outBuf, "Enter the username you wish to register:\n");
+	    	//WRITE_OUT_BUFFER
+	    	//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
+					//inBuf[recvLen] = '\0';        
+	    	//}
+	    	//userName = trim(string(inBuf));
 	    	int index = Database::searchUserIndex(userName);
 
 			  // New user and user name is not already taken.
 	    	if (index == -1) {
-					while(1) {
-		    		strcpy(outBuf, "Enter your Password:\n");
-		    		WRITE_OUT_BUFFER
+					//while(1) {
+		    		//strcpy(outBuf, "Enter your Password:\n");
+		    		//WRITE_OUT_BUFFER
 	
-		    		if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-			    		inBuf[recvLen] = '\0';        
-		    		}
-		    		passWord = trim(string(inBuf));
-		    		strcpy(outBuf, "Renter your Password:\n");
-		    		WRITE_OUT_BUFFER
-		    		if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-						inBuf[recvLen] = '\0';        
-		    		}
+		    		//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
+			    		//inBuf[recvLen] = '\0';        
+		    		//}
+		    		//passWord = trim(string(inBuf));
+		    		//strcpy(outBuf, "Renter your Password:\n");
+		    		//WRITE_OUT_BUFFER
+		    		//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
+					//	inBuf[recvLen] = '\0';        
+		    		//}
+					/*
 		    		repassWord= trim(string(inBuf));
 						if(passWord == repassWord) {
 			    		userFlag = 1;
@@ -402,40 +427,49 @@ int validateClientUsername(int sd, string& username) {
 	    	if (userFlag == 1) {
 					break;
 				}
-		  }	 
+		  }	 */
 			user.username = userName;
 			user.password = passWord;
 			Database::AddUser(user);
-			strcpy(outBuf, "Registration Successful!\n");
-			WRITE_OUT_BUFFER
+			//strcpy(outBuf, "Registration Successful!\n");
+			//WRITE_OUT_BUFFER
 			input = "2";
+		} else {
+			isValid = 0;
+			cout << "Username already taken\n";
+			strcpy(outBuf, USERNAMETAKEN);
+			WRITE_OUT_BUFFER
+			return isValid;
+		}
     }
 
-		// Existing user login.
+	// Existing user login.
     if (input.compare("2") == 0) {
-			strcpy(outBuf, "Enter Credentials to start the game:\n");
-			WRITE_OUT_BUFFER
+			//strcpy(outBuf, "Enter Credentials to start the game:\n");
+			//WRITE_OUT_BUFFER
 
 			// Ask for username.
 			// TODO(sanisha): This while loop serves no purpose. 
 			// There was no need for this to be a while loop. If user
 			// does not give correct username, password...they make
 			// a new connection.
-			while(1) {
+
+			//while(1) {
 		    isValid = 0;
-	    	strcpy(outBuf, "Enter Username:\n");
-	    	WRITE_OUT_BUFFER
+	    	//strcpy(outBuf, "Enter Username:\n");
+	    	//WRITE_OUT_BUFFER
 
- 	    	if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-	   			inBuf[recvLen] = '\0';        
-					username.clear();
-					username.append(trim(string(inBuf)));
-
-					int user_index = Database::searchUserIndex(username);
-					if (user_index == -1) {
-		    		strcpy(outBuf, "Not a valid UserName!\n");
+ 	    	//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
+	   			//inBuf[recvLen] = '\0';        
+			username.clear();
+					//username.append(trim(string(inBuf)));
+			username.append(trim(userName));
+			int user_index = Database::searchUserIndex(username);
+			if (user_index == -1) {
+		    			strcpy(outBuf, USERNAMEERROR);
+						cout << "USER_NAME_ERROR" << endl;
 						isValid = 0;
-					} else {
+			} else {
 							user = (*(Database::users))[user_index];
 							if (active_connections.if_user_alive(username)) {
 								cout << username << " is already logged in"	<< endl;
@@ -444,33 +478,32 @@ int validateClientUsername(int sd, string& username) {
 								isValid = 0;
 							} else {
 								isValid = 1;
-		    				strcpy(outBuf, "Enter Password:\n");
+		    					//strcpy(outBuf, "Enter Password:\n");
 							}
-					}
-				}
+			}
 
 		  	// Check for entered password
 				if (isValid) {
-					WRITE_OUT_BUFFER
-					while((recvLen = read(sd, inBuf, BUFSIZE)) > 0) {
-						inBuf[recvLen] = '\0';
-						string password = trim(string(inBuf));
+					//WRITE_OUT_BUFFER
+					
+					//while((recvLen = read(sd, inBuf, BUFSIZE)) > 0) {
+						//inBuf[recvLen] = '\0';
+						string password = trim(passWord);
 						if (password.compare(user.password) == 0) {
-           		successFlag = 1;
-			    		fprintf(stdout, PASSWORDVALID);
-			    		strcpy(outBuf, "Success!\n");
+           					successFlag = 1;
+			    			fprintf(stdout, PASSWORDVALID);
+			    			strcpy(outBuf, SUCCESS);
 						} else {
- 			    		fprintf(stdout, PASSWORDERROR);
-			    		strcpy(outBuf, "Wrong Password!\n");
-			    		isValid = 0;
+ 			    			fprintf(stdout, PASSWORDERROR);
+			    			strcpy(outBuf, "Wrong Password!\n");
+			    			isValid = 0;
 						}		
-						break;
-		   		}
+						//break;
+		   			//}
 		 			WRITE_OUT_BUFFER		
 				}
 				return isValid;
-			}
-    }
+		}
 }
 
 // Function to check for valid username and password combination.
