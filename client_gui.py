@@ -41,7 +41,7 @@ class MainPanel(wx.Frame):
         userSizer = wx.StaticText(panel, label="User name", pos = (140, 250))
         passSizer = wx.StaticText(panel, label="Password", pos = (140, 300))
 
-	#png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+	png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
 	wx.StaticBitmap(panel, 1, png, (125, 5), (png.GetWidth(), png.GetHeight()))	
 
 	self.loginbut = wx.Button(panel, label='Login', pos=(50, 400))
