@@ -64,7 +64,7 @@ int passiveTCP(const char *service, int qlen);
 int validateClientUsername(int sd, string& username);
 string trim(string);
 
-// You could also take an existing vector as a parameter.
+// Function to split a string in tokens by a delimiter
 vector<string> split(string str, char delimiter) {
   vector<string> internal;
   stringstream ss(str); // Turn the string into a stream.
@@ -89,7 +89,7 @@ class ProtectedSockets {
 	public:
 		int find_active_user_fd(const string& username) {
 			int fd = -1;
-			for(int i=0; i < fds.size(); ++i) {
+			for(size_t i=0; i < fds.size(); ++i) {
 				if (fds[i].first.compare(username) == 0) {
 				  fd = fds[i].second;
 					break;
@@ -264,7 +264,7 @@ class Database {
 
 		static int searchUserIndex(const string& username) {
 			int index = -1;
-			for(int i=0; i < users->size(); ++i) {
+			for(size_t i=0; i < users->size(); ++i) {
 				if ((*users)[i].username.compare(username) == 0) {
 					return i;
 				}	
@@ -292,7 +292,7 @@ class Database {
 				db_lock.unlock();
 				return false;
 			} else {
-				char *insert_query_template = "INSERT INTO %s ('USERNAME', 'PASSWORD', 'TOTAL_SCORE', 'BEST_SCORE', 'WORST_SCORE', 'TOTAL_GAMES') VALUES(\"%s\", \"%s\",%d, %d, %d, %d)";
+				const char *insert_query_template = "INSERT INTO %s ('USERNAME', 'PASSWORD', 'TOTAL_SCORE', 'BEST_SCORE', 'WORST_SCORE', 'TOTAL_GAMES') VALUES(\"%s\", \"%s\",%d, %d, %d, %d)";
 				char insert_sql[300];
 				sprintf(insert_sql, insert_query_template, TABLENAME, user.username.c_str(), user.password.c_str(), user.total_score, user.best_score, user.worst_score, user.total_games); 
 		
@@ -306,7 +306,7 @@ class Database {
 
 		static bool syncUserToDb(const User& user) {
 			db_lock.lock();
-			char *update_sql_template = "UPDATE %s SET PASSWORD = \"%s\", TOTAL_SCORE = %d, BEST_SCORE = %d, WORST_SCORE = %d, TOTAL_GAMES = %d WHERE USERNAME = \"%s\"";
+			const char *update_sql_template = "UPDATE %s SET PASSWORD = \"%s\", TOTAL_SCORE = %d, BEST_SCORE = %d, WORST_SCORE = %d, TOTAL_GAMES = %d WHERE USERNAME = \"%s\"";
 			char update_sql[300];
 			sprintf(update_sql, update_sql_template, TABLENAME, user.password.c_str(), user.total_score, user.best_score, user.worst_score, user.total_games, user.username.c_str());
 			
@@ -361,7 +361,7 @@ int validateClientUsername(int sd, string& username) {
     int recvLen;
     //bool isActive = false;
     User user;
-    int successFlag = 0;
+    //int successFlag = 0;
     //string passWord;
     string repassWord;	
     //string userName;
@@ -383,7 +383,7 @@ int validateClientUsername(int sd, string& username) {
 	cout << "password: " << passWord << endl;
     //string input = trim(string(inBuf));
     if (input.compare("1") == 0) {
-			int userFlag = 0;
+			//int userFlag = 0;
 			//while(1) {
 	    	//strcpy(outBuf, "Enter the username you wish to register:\n");
 	    	//WRITE_OUT_BUFFER
@@ -490,12 +490,12 @@ int validateClientUsername(int sd, string& username) {
 						//inBuf[recvLen] = '\0';
 						string password = trim(passWord);
 						if (password.compare(user.password) == 0) {
-           					successFlag = 1;
+           					//successFlag = 1;
 			    			fprintf(stdout, PASSWORDVALID);
 			    			strcpy(outBuf, SUCCESS);
 						} else {
  			    			fprintf(stdout, PASSWORDERROR);
-			    			strcpy(outBuf, "Wrong Password!\n");
+			    			strcpy(outBuf, PASSWORDERROR);
 			    			isValid = 0;
 						}		
 						//break;
@@ -504,6 +504,7 @@ int validateClientUsername(int sd, string& username) {
 				}
 				return isValid;
 		}
+	return isValid;
 }
 
 // Function to check for valid username and password combination.
@@ -521,6 +522,15 @@ int userNameHandler(int fd) {
 		close(fd);
 	} else {
 		active_connections.push_back(username, fd);
+		// Send user stats to the socket
+		for(size_t i=0; i < Database::users->size(); ++i) {
+			if ((*Database::users)[i].username.compare(username) == 0) {
+				User user = (*Database::users)[i];
+				cout << "User stats: " << user.username << " : " << user.total_score << endl;
+				string user_stats = user.username + "_" + to_string(user.total_score) + "_" + to_string(user.best_score) + "_" + to_string(user.worst_score);
+				write(fd, user_stats.c_str(), user_stats.length());
+			}
+		}
 		fprintf(stdout, "Success! Its a match \n");
 	}
 	return 0;
@@ -713,6 +723,7 @@ void* syncMemoryToDb(void*) {
 		cout << "##### Sinking game state to database for all users" << endl;
 		Database::syncToDb();
 	}
+	return 0;
 }
 
 /*
@@ -800,6 +811,7 @@ void* handleInterServerCommunication(void*) {
 		}
 		close(ssock);
 	}
+	return 0;
 }
 
 // This function keeps on checking whether other server is
@@ -882,6 +894,7 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 			}
 		}
 	}
+	return 0;
 }
 
 /*

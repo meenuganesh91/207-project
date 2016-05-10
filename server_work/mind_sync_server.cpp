@@ -29,7 +29,7 @@ using namespace std;
 string 
 trim(string str) {
 	string ans;
-	int i;
+	size_t i;
 	for (i=0; i < str.size(); ++i) {
 		if (isalnum(str[i])) {
 			ans = str.substr(i);
