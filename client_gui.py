@@ -20,51 +20,36 @@ class MainPanel(wx.Frame):
 
         super(MainPanel, self).__init__(parent, title=title, 
             size=(500, 500))
-        panel = wx.Panel(self)
-
-	#self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	'''host = socket.gethostbyname(sys.argv[1])
-	mPort = 8777
-	sPort = 8778
-	mAddress = (host,mPort)
-	sAddress = (host,sPort)'''
-
-	'''try:
-		self.sock.connect(mAddress)
-	except:
-		self.sock.connect(sAddress)'''
+        self.panel = wx.Panel(self)
 	
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
 
-        userSizer = wx.StaticText(panel, label="User name", pos = (140, 250))
-        passSizer = wx.StaticText(panel, label="Password", pos = (140, 300))
+        userSizer = wx.StaticText(self.panel, label="User name", pos = (140, 250))
+        passSizer = wx.StaticText(self.panel, label="Password", pos = (140, 300))
 
 	png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
-	wx.StaticBitmap(panel, 1, png, (125, 5), (png.GetWidth(), png.GetHeight()))	
+	wx.StaticBitmap(self.panel, 1, png, (125, 5), (png.GetWidth(), png.GetHeight()))	
 
-	self.loginbut = wx.Button(panel, label='Login', pos=(50, 400))
+	self.loginbut = wx.Button(self.panel, label='Login', pos=(50, 400))
 
-	self.signupbut = wx.Button(panel, label='Sign up', pos=(350, 400))
+	self.signupbut = wx.Button(self.panel, label='Sign up', pos=(350, 400))
 
-	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER, pos = (250, 250))
+	self.tc1 = wx.TextCtrl(self.panel, style = wx.TE_PROCESS_ENTER, pos = (250, 250))
 	bsizer = wx.BoxSizer()
 	bsizer.Add(self.tc1, 1, wx.EXPAND)
 
-        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (250,300))
+        self.tc2 = wx.TextCtrl(self.panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (250,300))
 
 	self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
 	self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
-
-        '''fgs.AddMany([(userSizer), (self.tc1, 1, wx.EXPAND), (passSizer), 
-            (self.tc2, 1, wx.EXPAND)])'''
 
         fgs.AddGrowableRow(2, 1)
         fgs.AddGrowableCol(1, 1)
 
         hbox.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=15)
-        panel.SetSizer(hbox)
+        self.panel.SetSizer(hbox)
         self.Centre()
         self.Show()  
 
@@ -86,11 +71,27 @@ class MainPanel(wx.Frame):
 
 	sock.recv(1024)
         sock.send(serverFormat)
+
         
 	errCode = sock.recv(1024)
 	print "Error code : ", errCode
 	#errCode = "USER_NAME_ERROR"
 	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" or errCode == "USER_NAME_TAKEN" or errCode == "ALREADY_LOGGED_IN"):
+		if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR"):
+			errorMsg = wx.StaticText(self.panel, label="Wrong User name or password", 
+				pos = (150, 350))
+			errorMsg.SetForegroundColour((255,0,0))
+
+		elif(errCode == "USER_NAME_TAKEN"):
+			errorMsg = wx.StaticText(self.panel, label="User name taken", 
+				pos = (150, 350))
+			errorMsg.SetForegroundColour((255,0,0))
+
+		elif (errCode == "ALREADY_LOGGED_IN"):
+			errorMsg = wx.StaticText(self.panel, label="User already logged in", 
+				pos = (150, 350))
+			errorMsg.SetForegroundColour((255,0,0))
+
 		self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
 		self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
 	
@@ -152,12 +153,7 @@ class SecondPanel(wx.Frame):
 	timerSizer = wx.StaticText(self.pnl, -1,label = "Timer : ", pos = (5,600))
 	timerfont = wx.Font(15,wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
 	timerSizer.SetFont(timerfont)
-	timerSizer.SetForegroundColour((0,0,0))
 
-	#timer = wx.Timer(self.pnl)
-	#timer.Start(100)	
-
-	
 	hbox.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=15)
         self.pnl.SetSizer(hbox)
         self.Centre()
