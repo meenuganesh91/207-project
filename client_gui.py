@@ -109,7 +109,7 @@ class SecondPanel(wx.Frame):
     def __init__(self, parent, title):
         super(SecondPanel, self).__init__(parent, title=title, 
             size=(550, 500))
-        pnl = wx.Panel(self)
+        self.pnl = wx.Panel(self)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -117,7 +117,7 @@ class SecondPanel(wx.Frame):
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
 
-	promptSizer = wx.StaticText(pnl, -1,
+	promptSizer = wx.StaticText(self.pnl, -1,
 		label = "Enter the word that pops up in your mind on reading", pos = (20, 10))
 	font = wx.Font(15,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	promptSizer.SetFont(font)
@@ -127,35 +127,45 @@ class SecondPanel(wx.Frame):
 
 	words = response.split("_")
 
-	word = words[0]
+	wrd = words[0]
 
-	print "Word is" + word
+	print "Word is" + wrd
 	
-	wordSizer = wx.StaticText(pnl, -1,label = word, pos = (220, 50))
+	self.wordSizer = wx.StaticText(self.pnl, -1,label = wrd, pos = (220, 50))
 	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
-	wordSizer.SetFont(font)
-	wordSizer.SetForegroundColour((255,0,0))
+	self.wordSizer.SetFont(font)
+	self.wordSizer.SetForegroundColour((255,0,0))
 	
-	enterbut = wx.Button(pnl, label='Enter', pos=(215, 200), size = (100,50))
+	enterbut = wx.Button(self.pnl, label='Enter', pos=(215, 200), size = (100,50))
 
-	self.word = wx.TextCtrl(pnl, style = wx.TE_PROCESS_ENTER, pos = (175,100), 
+	self.word = wx.TextCtrl(self.pnl, style = wx.TE_PROCESS_ENTER, pos = (175,100), 
 	size = (200,100))
 
 
 	enterbut.Bind(wx.EVT_BUTTON, self.OnButtonPress)
 	
-	timer = wx.Timer(pnl)
+	timer = wx.Timer(self.pnl)
 	timer.Start(100)	
 
 	
 	hbox.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=15)
-        pnl.SetSizer(hbox)
+        self.pnl.SetSizer(hbox)
         self.Centre()
         self.Show()
 
     def OnButtonPress(self, e):
 	print "Entered word: ", self.word.GetValue()
-	self.Close(True)
+	sock.send(self.word.GetValue())
+	response = sock.recv(1024)
+	words = response.split("_")
+	wrd = words[0]
+
+	self.wordSizer.SetLabel(wrd)
+	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
+	self.wordSizer.SetFont(font)
+	self.wordSizer.SetForegroundColour((255,0,0))
+	print "Word is" + wrd
+	#self.Close(True)
 
 
 if __name__ == '__main__':
