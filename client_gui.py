@@ -108,7 +108,7 @@ class SecondPanel(wx.Frame):
 
     def __init__(self, parent, title):
         super(SecondPanel, self).__init__(parent, title=title, 
-            size=(550, 500))
+            size=(550, 700))
         self.pnl = wx.Panel(self)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -117,11 +117,15 @@ class SecondPanel(wx.Frame):
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
 
+
+	png1 = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+	wx.StaticBitmap(self.pnl, 1, png1, (125, 5), (png1.GetWidth(), png1.GetHeight()))
+
 	promptSizer = wx.StaticText(self.pnl, -1,
-		label = "Enter the word that pops up in your mind on reading", pos = (20, 10))
+		label = "Enter the word that pops up in your mind on reading", pos = (20, 240))
 	font = wx.Font(15,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	promptSizer.SetFont(font)
-	promptSizer.SetForegroundColour((0,0,255))
+	promptSizer.SetForegroundColour((0,0,0))
 
 	response = sock.recv(1024)
 
@@ -131,21 +135,27 @@ class SecondPanel(wx.Frame):
 
 	print "Word is" + wrd
 	
-	self.wordSizer = wx.StaticText(self.pnl, -1,label = wrd, pos = (220, 50))
+	self.wordSizer = wx.StaticText(self.pnl, -1,label = wrd, pos = (220, 300))
 	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	self.wordSizer.SetFont(font)
 	self.wordSizer.SetForegroundColour((255,0,0))
 	
-	enterbut = wx.Button(self.pnl, label='Enter', pos=(215, 200), size = (100,50))
+	enterbut = wx.Button(self.pnl, label='Enter', pos=(215, 500), size = (100,50))
 
-	self.word = wx.TextCtrl(self.pnl, style = wx.TE_PROCESS_ENTER, pos = (175,100), 
-	size = (200,100))
+	self.word = wx.TextCtrl(self.pnl, style = wx.TE_PROCESS_ENTER, pos = (175,400), 
+	size = (200,50))
 
 
 	enterbut.Bind(wx.EVT_BUTTON, self.OnButtonPress)
 	
-	timer = wx.Timer(self.pnl)
-	timer.Start(100)	
+
+	timerSizer = wx.StaticText(self.pnl, -1,label = "Timer : ", pos = (5,600))
+	timerfont = wx.Font(15,wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
+	timerSizer.SetFont(timerfont)
+	timerSizer.SetForegroundColour((0,0,0))
+
+	#timer = wx.Timer(self.pnl)
+	#timer.Start(100)	
 
 	
 	hbox.Add(fgs, proportion=1, flag=wx.ALL|wx.EXPAND, border=15)
