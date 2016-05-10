@@ -77,6 +77,7 @@ vector<string> split(string str, char delimiter) {
   return internal;
 }
 
+//
 // Class for lock protected operations on socket descriptors.
 // This also serves as the current state of the server.
 //
@@ -194,6 +195,7 @@ struct GamePlayers {
 	pair<string, int> player2;
 };
 
+// Class for User stats.
 class User {
 public:
 	int id;
@@ -359,12 +361,8 @@ int validateClientUsername(int sd, string& username) {
     char outBuf[BUFSIZE + 1];
     int isValid = 0;
     int recvLen;
-    //bool isActive = false;
     User user;
-    //int successFlag = 0;
-    //string passWord;
     string repassWord;	
-    //string userName;
     string msg;
 
     strcpy(outBuf, "Enter the username:password combination\n");
@@ -374,14 +372,15 @@ int validateClientUsername(int sd, string& username) {
     }
 
 	std::vector<string> clInput = split(inBuf, ':');
+	if (clInput.size() < 3) {
+		cout << "No response sent from client" << endl;
+		return isValid;
+	}
 	string input = trim(clInput[0]);
 	string userName = trim(clInput[1]);
 	string passWord = trim(clInput[2]);
-
-	cout << "input: " << input << endl;
-	cout << "username: " << userName << endl;
-	cout << "password: " << passWord << endl;
-    //string input = trim(string(inBuf));
+	
+	cout << "Entered sign-in input:" << input << " Username:" << userName << " Password: " << passWord << endl;
     if (input.compare("1") == 0) {
 			//int userFlag = 0;
 			//while(1) {
@@ -583,7 +582,7 @@ void* gameHandler(void* game_players) {
 	int game_score = 0;
 
 	// Variables to make sure new word is selected
-  // correctly and game scores are also correct.
+  	// correctly and game scores are also correct.
 	bool new_word_wanted = true;
 	string word = "";
 	int word_try_count = 1;
@@ -627,7 +626,7 @@ void* gameHandler(void* game_players) {
 
 		write(fd1, message1.c_str(), message1.length());
 		if (errno != 0) {
-			message2 = "GAME_END_" +  message_suffix_2;
+			message2 = "GAMEEND_" +  message_suffix_2;
 			write(fd2, message2.c_str(), message2.length());
 			cout << "Notified " << "username:fd = " << username2 << ":" << fd2 << " of game shutdown." << endl;
 
@@ -644,7 +643,7 @@ void* gameHandler(void* game_players) {
 		cout << "Going to write to " << "username:fd = " << username2 << ":" << fd2 << endl;
 		write(fd2, message2.c_str(), message2.length());
 		if (errno != 0) {
-			message1 = "GAME_END_" + message_suffix_1;
+			message1 = "GAMEEND_" + message_suffix_1;
 			write(fd1, message1.c_str(), message1.length());
 			cout << "Notified " << "username:fd = " << username1 << ":" << fd1 << " of game shutdown." << endl;
 			
