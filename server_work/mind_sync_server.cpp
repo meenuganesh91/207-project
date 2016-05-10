@@ -18,6 +18,7 @@
 		
 #define BUFSIZE	2048
 #define NAMELEN	100
+#define WHITE_SPACE " \t\n"
 
 int errexit(const char *format, ...);
 using namespace std;
@@ -28,12 +29,20 @@ using namespace std;
 string 
 trim(string str) {
 	string ans;
-	for (auto c : str) {
-		if (isalnum(c)) {
-		  ans.push_back(c);
-		} else {
+	int i;
+	for (i=0; i < str.size(); ++i) {
+		if (isalnum(str[i])) {
+			ans = str.substr(i);
 			break;
 		}
 	}
+	
+	for(i=ans.size() - 1; i >= 0; --i) {
+		if (isalnum(ans[i])) {
+			break;
+		}
+	}
+	
+	ans = ans.substr(0, i+1);
 	return ans;
 }
