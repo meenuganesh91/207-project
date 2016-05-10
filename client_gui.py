@@ -22,27 +22,37 @@ class MainPanel(wx.Frame):
             size=(500, 500))
         panel = wx.Panel(self)
 
-	self.conn = False
+	self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	host = socket.gethostbyname(sys.argv[1])
+	mPort = 8777
+	sPort = 8778
+	mAddress = (host,mPort)
+	sAddress = (host,sPort)
 
+	try:
+		self.sock.connect(mAddress)
+	except:
+		self.sock.connect(sAddress)
+	
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
         fgs = wx.FlexGridSizer(3, 2, 9, 25)
 
-        userSizer = wx.StaticText(panel, label="User name", pos = (70, 250))
-        passSizer = wx.StaticText(panel, label="Password", pos = (70, 300))
+        userSizer = wx.StaticText(panel, label="User name", pos = (140, 250))
+        passSizer = wx.StaticText(panel, label="Password", pos = (140, 300))
 
-	png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
+	#png = wx.Image("./index.png", wx.BITMAP_TYPE_ANY).ConvertToBitmap()
 	wx.StaticBitmap(panel, 1, png, (125, 5), (png.GetWidth(), png.GetHeight()))	
 
 	self.loginbut = wx.Button(panel, label='Login', pos=(50, 400))
 
 	self.signupbut = wx.Button(panel, label='Sign up', pos=(350, 400))
 
-	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER, pos = (300, 250))
+	self.tc1 = wx.TextCtrl(panel, style = wx.TE_PROCESS_ENTER, pos = (250, 250))
 	bsizer = wx.BoxSizer()
 	bsizer.Add(self.tc1, 1, wx.EXPAND)
 
-        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (300,300))
+        self.tc2 = wx.TextCtrl(panel, style=wx.TE_PASSWORD|wx.TE_PROCESS_ENTER, pos = (250,300))
 
 	self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
 	self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
@@ -73,21 +83,13 @@ class MainPanel(wx.Frame):
 	serverFormat = str(code)+':'+self.tc1.GetValue()+':'+self.tc2.GetValue()
 	
 	print 'Server Format: ', serverFormat
-	
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-	if self.conn == False:	
-		host = socket.gethostbyname(sys.argv[1])
-		port = int(sys.argv[2])
-		serverAddress = (host,port)
-		sock.connect(serverAddress)
-		self.conn = True
-	sock.recv(1024)
-        sock.send(serverFormat)
+	self.sock.recv(1024)
+        self.sock.send(serverFormat)
         
-	#errCode = sock.recv(1024)
-	#print "Error code : ", errCode
-	errCode = "USER_NAME_ERROR"
+	errCode = self.sock.recv(1024)
+	print "Error code : ", errCode
+	#errCode = "USER_NAME_ERROR"
 	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" ):
 		self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
 		self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
@@ -109,7 +111,7 @@ class SecondPanel(wx.Frame):
             size=(550, 500))
         pnl = wx.Panel(self)
 
-	self.SetBackgroundColour((0,0,255))
+	self.SetBackgroundColour("Yellow")
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -120,7 +122,7 @@ class SecondPanel(wx.Frame):
 	font = wx.Font(15,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	promptSizer.SetFont(font)
 	promptSizer.SetForegroundColour((0,0,255))
-
+	
 	wordSizer = wx.StaticText(pnl, -1,label = "Dog", pos = (220, 50))
 	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
 	wordSizer.SetFont(font)
