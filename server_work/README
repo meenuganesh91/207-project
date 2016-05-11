@@ -4,38 +4,49 @@
 > make
 
 2. To run the server:
-> ./mindSync 8777
+** MASTER
+> ./mindSync <service_port> <master_port>
+> ./mindSync 8777 9000
+
+**SLAVE
+> ./mindSync 8778 9001
+
+==========================================
 
 3. Clients:
+============
+
 (terminal 1) : telnet localhost 8777
-username: sanisha
-password: pass1234
+Enter the action:username:password combination
+1:hello:hello
+SUCCESShello_0_0_0substance_0_sani_matters
+substance_100_sani_mattersclear
+abortive_100_sani_action
+abortive_200_sani_actionmeasure
+
 
 (terminal 2) : telnet localhost 8777
- username: gaurav
- password: nanda
-
-** Game will start between the two players **
-
+Enter the action:username:password combination
+2:lgin:sts
+USER_NAME_ERRORConnection closed by foreign host.
 
 
 (terminal 3) : telnet localhost 8777
-username: nanda
-password: gaurav
-
-(terminal 4) : telnet localhost 8777
-username: meenu
-password: ganesh
+Enter the action:username:password combination
+2:sani:hello
+SUCCESSsani_2200_300_0substance_0_hello_matters
+substance_100_hello_matters
+abortive_100_hello_clearaction
+abortive_200_hello_actionnopes
+fetch_200_hello_measureresults
 
 ** Game will start between these two players **
 
-===================== Some helpful sqlite tips==================
+===================== Some helpful tips ==================
 
-Do install the following sqlite libraries:
+Do install the following libraries:
 
 sudo apt-get install sqlite3
 sudo apt-get install libsqlite3-dev
+sudo apt-get install python-wxgtk2.8
 
-
-**NOTE: There are many to-dos in the server. Please check the list here https://docs.google.com/document/d/1hfXpDL9L7vSEFG-fyRfpQHYDXXnWYFZ0YVbox7qZCPQ/edit.
-Currenly, I am facing issue in compiling the code on my system, it was working fine on MAC till yesterday. Trying to fix the issue. You can all try and check if its working there.
