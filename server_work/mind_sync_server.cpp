@@ -7,6 +7,7 @@
 #include <locale>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include <unistd.h>
 #include <stdio.h>
@@ -45,4 +46,17 @@ trim(string str) {
 	
 	ans = ans.substr(0, i+1);
 	return ans;
+}
+
+// Function to split a string in tokens by a delimiter
+vector<string> split(string str, char delimiter) {
+  vector<string> internal;
+  stringstream ss(str); // Turn the string into a stream.
+  string tok;
+  
+  while(getline(ss, tok, delimiter)) {
+    internal.push_back(tok);
+  }
+  
+  return internal;
 }

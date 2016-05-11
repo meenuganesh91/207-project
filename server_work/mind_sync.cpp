@@ -13,7 +13,6 @@
 #include <set>
 #include <utility>
 #include <vector>
-#include <sstream>
 
 #include <sqlite3.h>
 #include <string.h>
@@ -32,7 +31,6 @@
 #define	LENGTH		2000
 #define NUM_THREADS 2000
 
-// TODO(sanisha): Make sure these are the same strings read by client.
 // This would act as protocol between client and server.
 #define USERNAMEERROR "USER_NAME_ERROR"
 #define PASSWORDERROR	"PASSWORD_ERROR"
@@ -40,6 +38,7 @@
 #define PASSWORDVALID	"PASSWORD_VALID"
 #define DUPLICATEUSER	"USER_ALREADY_LOGGED"
 #define USERNAMETAKEN	"USER_NAME_TAKEN"
+#define INVALIDRESPONSE	"INVALID_USER_INPUT"
 #define GAME_END "GAME_END"
 #define SUCCESS	"SUCCESS"
 
@@ -52,7 +51,7 @@
 #define HIGH_PRIORITY_PORT string("9000")
 #define LOW_PRIORITY_PORT string("9001")
 
-#define REFRESH_RATE 60
+#define REFRESH_RATE 15
 
 #define TO_LOWER(s) std::transform(s.begin(), s.end(), s.begin(), ::tolower)
 
@@ -63,19 +62,8 @@ int errexit(const char *format, ...);
 int passiveTCP(const char *service, int qlen);
 int validateClientUsername(int sd, string& username);
 string trim(string);
+vector<string> split(string str, char delimiter);
 
-// Function to split a string in tokens by a delimiter
-vector<string> split(string str, char delimiter) {
-  vector<string> internal;
-  stringstream ss(str); // Turn the string into a stream.
-  string tok;
-  
-  while(getline(ss, tok, delimiter)) {
-    internal.push_back(tok);
-  }
-  
-  return internal;
-}
 
 //
 // Class for lock protected operations on socket descriptors.
@@ -365,7 +353,7 @@ int validateClientUsername(int sd, string& username) {
     string repassWord;	
     string msg;
 
-    strcpy(outBuf, "Enter the username:password combination\n");
+    strcpy(outBuf, "Enter the action:username:password combination\n");
     write(sd, outBuf, strlen(outBuf));
     if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
 			inBuf[recvLen] = '\0';        
@@ -373,7 +361,9 @@ int validateClientUsername(int sd, string& username) {
 
 	std::vector<string> clInput = split(inBuf, ':');
 	if (clInput.size() < 3) {
-		cout << "No response sent from client" << endl;
+		cout << "No/invalid response sent from client" << endl;
+		strcpy(outBuf, INVALIDRESPONSE);
+		WRITE_OUT_BUFFER
 		return isValid;
 	}
 	string input = trim(clInput[0]);
@@ -382,56 +372,14 @@ int validateClientUsername(int sd, string& username) {
 	
 	cout << "Entered sign-in input:" << input << " Username:" << userName << " Password: " << passWord << endl;
     if (input.compare("1") == 0) {
-			//int userFlag = 0;
-			//while(1) {
-	    	//strcpy(outBuf, "Enter the username you wish to register:\n");
-	    	//WRITE_OUT_BUFFER
-	    	//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-					//inBuf[recvLen] = '\0';        
-	    	//}
-	    	//userName = trim(string(inBuf));
-	    	int index = Database::searchUserIndex(userName);
+    	int index = Database::searchUserIndex(userName);
 
-			  // New user and user name is not already taken.
-	    	if (index == -1) {
-					//while(1) {
-		    		//strcpy(outBuf, "Enter your Password:\n");
-		    		//WRITE_OUT_BUFFER
-	
-		    		//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-			    		//inBuf[recvLen] = '\0';        
-		    		//}
-		    		//passWord = trim(string(inBuf));
-		    		//strcpy(outBuf, "Renter your Password:\n");
-		    		//WRITE_OUT_BUFFER
-		    		//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-					//	inBuf[recvLen] = '\0';        
-		    		//}
-					/*
-		    		repassWord= trim(string(inBuf));
-						if(passWord == repassWord) {
-			    		userFlag = 1;
-			    		break;
-						}
-						else {
-			    		strcpy(outBuf, "Passwords don't match. Please enter it again\n");
-		    	    	WRITE_OUT_BUFFER
-						}
-					}
-	    	}
-	    	else {
-					strcpy(outBuf, "Username already exists. Please enter a different username.\n");
-	    		WRITE_OUT_BUFFER	
-	   		}
-	    	if (userFlag == 1) {
-					break;
-				}
-		  }	 */
+		// New user and user name is not already taken.
+	    if (index == -1) {
 			user.username = userName;
 			user.password = passWord;
 			Database::AddUser(user);
-			//strcpy(outBuf, "Registration Successful!\n");
-			//WRITE_OUT_BUFFER
+			cout << "Registration successfull for new user" << endl;
 			input = "2";
 		} else {
 			isValid = 0;
@@ -444,63 +392,40 @@ int validateClientUsername(int sd, string& username) {
 
 	// Existing user login.
     if (input.compare("2") == 0) {
-			//strcpy(outBuf, "Enter Credentials to start the game:\n");
-			//WRITE_OUT_BUFFER
-
-			// Ask for username.
-			// TODO(sanisha): This while loop serves no purpose. 
-			// There was no need for this to be a while loop. If user
-			// does not give correct username, password...they make
-			// a new connection.
-
-			//while(1) {
 		    isValid = 0;
-	    	//strcpy(outBuf, "Enter Username:\n");
-	    	//WRITE_OUT_BUFFER
-
- 	    	//if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
-	   			//inBuf[recvLen] = '\0';        
 			username.clear();
-					//username.append(trim(string(inBuf)));
 			username.append(trim(userName));
 			int user_index = Database::searchUserIndex(username);
 			if (user_index == -1) {
-		    			strcpy(outBuf, USERNAMEERROR);
-						cout << "USER_NAME_ERROR" << endl;
-						isValid = 0;
+	 			strcpy(outBuf, USERNAMEERROR);
+				cout << "USER_NAME_ERROR: Invalid username passed" << endl;
+				WRITE_OUT_BUFFER
+				isValid = 0;
 			} else {
-							user = (*(Database::users))[user_index];
-							if (active_connections.if_user_alive(username)) {
-								cout << username << " is already logged in"	<< endl;
-								strcpy(outBuf, "ALREADY_LOGGED_IN");
-								WRITE_OUT_BUFFER
-								isValid = 0;
-							} else {
-								isValid = 1;
-		    					//strcpy(outBuf, "Enter Password:\n");
-							}
+				user = (*(Database::users))[user_index];
+				if (active_connections.if_user_alive(username)) {
+					cout << username << " is already logged in"	<< endl;
+					strcpy(outBuf, DUPLICATEUSER);
+					WRITE_OUT_BUFFER
+					isValid = 0;
+				} else {
+					isValid = 1;
+				}
 			}
 
 		  	// Check for entered password
-				if (isValid) {
-					//WRITE_OUT_BUFFER
-					
-					//while((recvLen = read(sd, inBuf, BUFSIZE)) > 0) {
-						//inBuf[recvLen] = '\0';
-						string password = trim(passWord);
-						if (password.compare(user.password) == 0) {
-           					//successFlag = 1;
-			    			fprintf(stdout, PASSWORDVALID);
-			    			strcpy(outBuf, SUCCESS);
-						} else {
- 			    			fprintf(stdout, PASSWORDERROR);
-			    			strcpy(outBuf, PASSWORDERROR);
-			    			isValid = 0;
-						}		
-						//break;
-		   			//}
+			if (isValid) {
+				string password = trim(passWord);
+				if (password.compare(user.password) == 0) {
+			    	cout << PASSWORDVALID << " Password not matching with username" << endl;
+			    	strcpy(outBuf, SUCCESS);
+				} else {
+ 			    	fprintf(stdout, PASSWORDERROR);
+			   		strcpy(outBuf, PASSWORDERROR);
+		 			isValid = 0;
+				}		
 		 			WRITE_OUT_BUFFER		
-				}
+			}
 				return isValid;
 		}
 	return isValid;
@@ -508,29 +433,28 @@ int validateClientUsername(int sd, string& username) {
 
 // Function to check for valid username and password combination.
 int userNameHandler(int fd) {
-	fprintf(stdout, "Checking for username and password\n");
+	cout << "Checking for username and password" << endl;
 		
 	// Validate username and password for three attempts.
 	string username;
 	// Make sure if one user is already logged in, don't let him login again.
 	if (!validateClientUsername(fd, username)) {
-		fprintf(stdout, "Wrong username and password or user already logged in, exiting \n");
+		cout << "Wrong username and password or user already logged in, exiting" << endl;
 		if (!pthread_detach(pthread_self())) {
 			fprintf(stdout, "Thread detached for the given sock_id: %d \n", fd); 
 		}
 		close(fd);
 	} else {
 		active_connections.push_back(username, fd);
+		cout << "Success! Valid credentials" << endl;	
 		// Send user stats to the socket
 		for(size_t i=0; i < Database::users->size(); ++i) {
 			if ((*Database::users)[i].username.compare(username) == 0) {
 				User user = (*Database::users)[i];
-				cout << "User stats: " << user.username << " : " << user.total_score << endl;
 				string user_stats = user.username + "_" + to_string(user.total_score) + "_" + to_string(user.best_score) + "_" + to_string(user.worst_score);
 				write(fd, user_stats.c_str(), user_stats.length());
 			}
 		}
-		fprintf(stdout, "Success! Its a match \n");
 	}
 	return 0;
 }
@@ -600,7 +524,7 @@ void* gameHandler(void* game_players) {
 		// int errorCode1 = -1, errorCode2 = -1;
 		// socklen_t len = sizeof (errorCode1);
 		
-   	// getsockopt (fd1, SOL_SOCKET, SO_ERROR, &errorCode1, &len) << endl;
+   		// getsockopt (fd1, SOL_SOCKET, SO_ERROR, &errorCode1, &len) << endl;
 		// getsockopt (fd2, SOL_SOCKET, SO_ERROR, &errorCode2, &len) << endl;
 
 		vector<int> arr;
@@ -615,9 +539,9 @@ void* gameHandler(void* game_players) {
 		cout << "Going to write to " << "username:fd = " << username1 << ":" << fd1 << endl;
 		errno = 0;
 
-		// These messages are would be sent to respective clients.
+		// These messages would be sent to respective clients.
 		// Message Structure:
-		// <WORD>_><GAME_SCORE>_<OTHER_USERNAME>_<OTHER_USER_PREVIOUS_RESPONSE>
+		// <WORD>_<GAME_SCORE>_<OTHER_USERNAME>_<OTHER_USER_PREVIOUS_RESPONSE>
 		string message_suffix_1 = to_string(game_score) + "_" + username2 + "_" + response2;
 		string message_suffix_2 = to_string(game_score) + "_" + username1 + "_" + response1;
 
@@ -653,12 +577,8 @@ void* gameHandler(void* game_players) {
 			Database::updateGameScore(gp, game_score);
 			break;
 		} 
-	
-		// Wait for 15 seconds.
-		// TODO(sanisha): Tell the client to put a 10 sec wait. Server
-		// need not do anything. If user does not responds back in 10
-    	// sec, client should send NO_RESPONSE;
-		//}
+
+		// Read clients responses	
 		int recvLen;
 		
 		cout << "Going to read from " << "username:fd = " << username1 << ":" << fd1 << endl;
@@ -708,10 +628,6 @@ void* gameHandler(void* game_players) {
 		cout << "\n*********************\n";
 
 		cout << "Game score is " << game_score << endl;
-	
-		//TODO: We need to update user only once game ends
-		//Database::UpdateUser(user1);
-		//Database::UpdateUser(user2);
 	}
 	return NULL;
 }
@@ -740,7 +656,7 @@ startNewGames(void* ) {
 		if (active_connections.free_players_count() >= 2) {
 			pair<string, int> player1 = active_connections.get_free_player();
 			// TODO(sanisha): There is a potential problem here, if active player count has decreased by the time control reaches here.
-      // i.e. after check up there in if statement. But it is not a big concern so don't worry.
+     		// i.e. after check up there in if statement. But it is not a big concern so don't worry.
 			pair<string, int> player2 = active_connections.get_free_player();
 			
 			cout << " Player1: " << player1.first << ":" << player1.second << " and Player2: " << player2.first << ":" << player2.second << endl;
@@ -750,10 +666,10 @@ startNewGames(void* ) {
 			gp.player1 = player1;
 			gp.player2 = player2;
 
-	    pthread_t th;
-      if (pthread_create(&th, NULL, (void * (*) (void *))gameHandler, (void *) &gp) < 0) {
-			  cout << "This thread creation failed." << endl;
-      }
+	    	pthread_t th;
+      		if (pthread_create(&th, NULL, (void * (*) (void *))gameHandler, (void *) &gp) < 0) {
+				  cout << "This thread creation failed." << endl;
+      		}
 		}
 		sleep(5);
 	}
@@ -820,14 +736,14 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 	string interaction_port = string((char*) my_server_interaction_port);
 	
 	// One of the two servers is high priority and other is lower.
-  // This is done just to avoid the race conditions when both
-  // servers start at same time and try to become master. 
+    // This is done just to avoid the race conditions when both
+    // servers start at same time and try to become master. 
 	// Our approach however, would be:
 	// When high priority server starts up:
 	// 	1) It checks if low priotiy server is up, if no, become master.
 	// 	2) If low priority server is up, then check whether low priority is master already.
 	//     If low priority is not yet master, it would become master, otherwise, would just wait for low
-  //		 priority one to go down.
+    //		 priority one to go down.
 	// On the other hand, if low priority one start up:
 	//  1) It checks whether, high priority is up, it just waits.
 	//  2) If high priotiy is down, it becomes master.
@@ -927,7 +843,7 @@ int main(int argc, char *argv[])
 	(void) pthread_attr_setdetachstate(&ta, PTHREAD_CREATE_DETACHED); 	
 
 	// Start a thread to keep track the master server, and see if 
-  // this server needs to become master now.
+    // this server needs to become master now.
 	if (pthread_create(&th, &ta, (void * (*) (void *))(startMasterSlaveCommunication), (void*)server_interaction_port) < 0) {
 	  errexit("Error in creating thread for starting new game.\n");
 	}
@@ -952,8 +868,8 @@ int main(int argc, char *argv[])
 
 	// Start thread which looks at the state of number
 	// of active connections. If active connections are 
-  // more than, then it spawns out a new thread which
-  // runs a game.
+    // more than, then it spawns out a new thread which
+    // runs a game.
 	if (pthread_create(&th, &ta, (void * (*) (void *))(startNewGames), NULL) < 0) {
 	  errexit("Error in creating thread for starting new game.\n");
 	}
