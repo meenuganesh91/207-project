@@ -196,8 +196,7 @@ class SecondPanel(wx.Frame):
         self.timersz = wx.StaticText(self.pnl, -1, label="60",pos = (80,600))
         self.timersz.SetFont(timerfont)
 
-        self.counter = 60
-
+        self.counter = 15
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.onTimer, self.timer)
         self.timer.Start(1000)
@@ -209,6 +208,9 @@ class SecondPanel(wx.Frame):
         self.timersz.SetLabel(msg)
         if self.counter <= 0:
             self.timer.Stop()   # stop the timer
+	    no_responce_msg = "NO_RESPONSE"
+	    sock.send(no_responce_msg)
+	    print "Entered word: "+ no_responce_msg
 
 	
 
@@ -217,6 +219,11 @@ class SecondPanel(wx.Frame):
 	print "Entered word: ", self.word.GetValue()
 	sock.send(self.word.GetValue())
 	print "receiving... "
+	self.timer.Stop()
+	self.counter = 16 
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.onTimer, self.timer)
+        self.timer.Start(1000)
 	try:
 		response = sock.recv(1024)
 	except:
