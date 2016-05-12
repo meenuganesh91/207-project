@@ -41,6 +41,7 @@
 #define INVALIDRESPONSE	"INVALID_USER_INPUT"
 #define GAME_END "GAME_END"
 #define SUCCESS	"SUCCESS"
+#define NO_RESPONSE "no_response"
 
 #define WRITE_OUT_BUFFER if (write(sd, outBuf, strlen(outBuf)) < 0) { errexit("Error in writing to the socket\n"); }
 
@@ -549,6 +550,7 @@ void* gameHandler(void* game_players) {
 		string message2 = word + "_" + message_suffix_2;
 
 		write(fd1, message1.c_str(), message1.length());
+		cout << "Last reponse stats sent to player1:" << message1 << endl;
 		if (errno != 0) {
 			message2 = "GAMEEND_" +  message_suffix_2;
 			write(fd2, message2.c_str(), message2.length());
@@ -566,6 +568,7 @@ void* gameHandler(void* game_players) {
 		errno = 0;
 		cout << "Going to write to " << "username:fd = " << username2 << ":" << fd2 << endl;
 		write(fd2, message2.c_str(), message2.length());
+		cout << "Last reponse stats sent to player1:" << message1 << endl;
 		if (errno != 0) {
 			message1 = "GAMEEND_" + message_suffix_1;
 			write(fd1, message1.c_str(), message1.length());
@@ -635,7 +638,7 @@ void* gameHandler(void* game_players) {
 		cout << "Read from username:fd = " << username2 << ":" << fd2 << " response: " << response2 << endl;
 		inBuf[0] = '\0';
 
-		if (response1.compare(response2) == 0) {
+		if (response1.compare(response2) == 0 && response1.compare(NO_RESPONSE) != 0) {
 			bool response_match_credit = true;
 			// Check if it is a repeated answer.
 			for(auto prev_response : previous_responses) {
