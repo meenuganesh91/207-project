@@ -259,7 +259,7 @@ class SecondPanel(wx.Frame):
 	self.gameEndErrorMsg.SetFont(gameEndFont)
 	self.gameEndErrorMsg.SetForegroundColour((255,0,0))'''
 
-	enterbut.Bind(wx.EVT_BUTTON, self.OnEnterPress)
+	enterbut.Bind(wx.EVT_BUTTON , self.OnEnterPress)
 
 	exitbut.Bind(wx.EVT_BUTTON, self.OnExitPress)
 
@@ -271,7 +271,7 @@ class SecondPanel(wx.Frame):
         self.timersz = wx.StaticText(self.pnl, -1, label="60",pos = (80,600))
         self.timersz.SetFont(timerfont)
 
-        self.counter = 60
+        self.counter = 15
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.onTimer, self.timer)
         self.timer.Start(1000)
@@ -286,8 +286,54 @@ class SecondPanel(wx.Frame):
 	    no_responce_msg = "NO_RESPONSE"
 	    sock.send(no_responce_msg)
 	    print "Entered word: "+ no_responce_msg
+	    self.counter = 16
+	    self.timer = wx.Timer(self)
+	    self.Bind(wx.EVT_TIMER,self.onTimer, self.timer)
+	    self.timer.Start(1000)
+	    try:
+                response = sock.recv(1024)
+	    except:
+                print "receive error or timedout"
+                #self.connectionErrorMsg.SetLabel("Connection error")
+                #self.connectErrorMsg.SetForegroundColour((255,0,0))
+                time.sleep(5)
+		sys.exit(0)
 
+            words = response.split("_") 
+       	    wrd = words[0]	
+            print "receive end" + wrd
+
+
+            if(wrd == ""):
+                print "receive error or timedout"
+                time.sleep(1)
+                sys.exit(0)
+
+            #wrd = "GAMEEND"        
+            if (wrd == "GAMEEND"):
+                print "received GAMEEND"
 	
+		response = sock.recv(1024)
+                words = response.split("_")
+                wrd = words[0]
+                print "receive end" + wrd
+                '''response = sock.recv(1024)
+                words = response.split("_")
+                wrd = words[0]
+                print "receive end" + wrd'''
+
+            self.wordSizer.SetLabel(wrd)
+            font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
+            self.wordSizer.SetFont(font)
+            self.wordSizer.SetForegroundColour((255,0,0))
+            print "Word is" + wrd
+
+            self.scoreSizer.SetLabel("Score: "+words[1])
+            scorefont = wx.Font(15,wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
+            self.scoreSizer.SetFont(scorefont)
+
+            self.responseSizer.SetLabel(words[2]+"'s response: "+words[3])
+            responsefont = wx.Font(15,wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
 
 
     def OnEnterPress(self, e):
@@ -296,7 +342,7 @@ class SecondPanel(wx.Frame):
 	self.word.Clear()
 	print "receiving... "
 	self.timer.Stop()
-	self.counter = 61 
+	self.counter = 16 
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.onTimer, self.timer)
         self.timer.Start(1000)
@@ -348,12 +394,10 @@ class SecondPanel(wx.Frame):
 	self.scoreSizer.SetLabel("Score: "+words[1])
         scorefont = wx.Font(15,wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
         self.scoreSizer.SetFont(scorefont)
-        self.scoreSizer.SetForegroundColour((0,0,0))
 
         self.responseSizer.SetLabel(words[2]+"'s response: "+words[3])
         responsefont = wx.Font(15,wx.DECORATIVE, wx.NORMAL, wx.NORMAL)
         self.responseSizer.SetFont(responsefont)
-        self.responseSizer.SetForegroundColour((0,0,0))
 
 
     def OnExitPress(self, e):
