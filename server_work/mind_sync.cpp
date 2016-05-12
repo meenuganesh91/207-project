@@ -96,15 +96,15 @@ class ProtectedSockets {
 				if (free_players.find(player) == free_players.end()) {
 					return true;	
 				} else {
-			    string send_echo_back = "SEND_ECHO_BACK";
-    			write(fd, send_echo_back.c_str(), send_echo_back.size());
+			    	string send_echo_back = "SEND_ECHO_BACK";
+    				write(fd, send_echo_back.c_str(), send_echo_back.size());
 
-			    char inBuf[BUFSIZE + 1];
+			    	char inBuf[BUFSIZE + 1];
 					int recvLen;
-    			if ((recvLen = read(fd, inBuf, BUFSIZE)) > 0) { 
+    				if ((recvLen = read(fd, inBuf, BUFSIZE)) > 0) { 
 						inBuf[recvLen] = '\0';        
-    			}
-    			string input = trim(string(inBuf));
+    				}
+    				string input = trim(string(inBuf));
 					if (input.compare("ECHO") == 0) {
 						return true;
 					} else {
@@ -451,7 +451,7 @@ int userNameHandler(int fd) {
 		for(size_t i=0; i < Database::users->size(); ++i) {
 			if ((*Database::users)[i].username.compare(username) == 0) {
 				User user = (*Database::users)[i];
-				string user_stats = user.username + "_" + to_string(user.total_score) + "_" + to_string(user.best_score) + "_" + to_string(user.worst_score);
+				string user_stats = user.username + "_" + to_string(user.total_score) + "_" + to_string(user.best_score) + "_" + to_string(user.worst_score) + "_";
 				write(fd, user_stats.c_str(), user_stats.length());
 			}
 		}
@@ -587,6 +587,25 @@ void* gameHandler(void* game_players) {
 			break;
 		}
 		response1 = trim(string(inBuf));
+		// If client dies, it send empty string
+		if (response1.compare("") == 0) {
+			errno = 0;
+			write(fd1, "1", 1);
+			if (errno != 0) {
+				message2 = "GAMEEND_" +  message_suffix_2;
+				write(fd2, message2.c_str(), message2.length());
+				cout << "Notified " << "username:fd = " << username2 << ":" << fd2 << " of game shutdown." << endl;
+
+				// Remove this player from active connections.
+				active_connections.search_and_delete(gp.player1);
+
+				// Add the other player to free players list.
+				active_connections.add_free_player(gp.player2);
+
+				Database::updateGameScore(gp, game_score);
+				break;
+			}
+		}
 		TO_LOWER(response1);
 		cout << "Read from username:fd = " << username1 << ":" << fd1 << " response: " << response1 << endl;
 		inBuf[0] = '\0';
@@ -597,6 +616,21 @@ void* gameHandler(void* game_players) {
 			break;
 		}
 		response2 = trim(string(inBuf));
+		if (response2.compare("") == 0) {
+			errno = 0;
+			write(fd2, "2", 1);
+			if (errno != 0) {
+				message1 = "GAMEEND_" + message_suffix_1;
+				write(fd1, message1.c_str(), message1.length());
+				cout << "Notified " << "username:fd = " << username1 << ":" << fd1 << " of game shutdown." << endl;
+			
+				active_connections.search_and_delete(gp.player2);
+				active_connections.add_free_player(gp.player1);
+
+				Database::updateGameScore(gp, game_score);
+				break;
+			}	
+		}
 		TO_LOWER(response2);
 		cout << "Read from username:fd = " << username2 << ":" << fd2 << " response: " << response2 << endl;
 		inBuf[0] = '\0';
