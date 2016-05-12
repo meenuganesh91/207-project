@@ -117,7 +117,9 @@ class MainPanel(wx.Frame):
 	print "Error code : ", errCode
 	print
 	
-	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" or errCode == "USER_NAME_TAKEN" or errCode == "USER_ALREADY_LOGGED" or errCode == "INVALID_USER_INPUT"):
+	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" or 
+	errCode == "USER_NAME_TAKEN" or errCode == "USER_ALREADY_LOGGED" or
+	errCode == "INVALID_USER_INPUT"):
 		if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR"):
 			err = "Wrong User name or password"
 			self.errorMsg.SetLabel(err)
@@ -141,10 +143,24 @@ class MainPanel(wx.Frame):
 	else:
 		self.errorMsg.SetLabel("You are successfully logged in")   
 		print "Success going to second panel"
-		global USER_STATS 
+ 
 		time.sleep(2)
-		USER_STATS = sock.recv(1024)
-		print "Stats ", USER_STATS
+		lengthOfUsername = len(self.tc1.GetValue())
+		
+		'''
+		For receiving the user stats correctly, so that it doesn't get garbled
+		with the word that server sends subsequently
+		''' 
+		underscoreCount = 0
+		global USER_STATS
+		USER_STATS = sock.recv(lengthOfUsername)
+		while underscoreCount < 4:
+			res = sock.recv(1)
+			if res == '_':
+				underscoreCount = underscoreCount+1
+			if(underscoreCount != 4):
+				USER_STATS = USER_STATS + res
+		print "Stats: ", USER_STATS
 
 		app2 = SecondPanel(None, title = 'Mind Sync')
 		self.Hide()
@@ -194,6 +210,7 @@ class SecondPanel(wx.Frame):
 	
 	scoreMsg3.SetFont(font)
 
+	
 	response = sock.recv(1024)
 
 	words = response.split("_")
