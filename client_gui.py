@@ -287,14 +287,20 @@ class SecondPanel(wx.Frame):
 		response = sock.recv(1024)
 	except:
        		print "receive error or timedout"	
-		self.connectionErrorMsg.SetLabel("Connection error")
-		self.connectErrorMsg.SetForegroundColour((255,0,0))
+		#self.connectionErrorMsg.SetLabel("Connection error")
+		#self.connectErrorMsg.SetForegroundColour((255,0,0))
 		time.sleep(5)
 		sys.exit(0)
 
 	words = response.split("_")
 	wrd = words[0]
 	print "receive end" + wrd
+
+
+	if(wrd == ""):
+		print "receive error or timedout"
+		time.sleep(1)	
+		sys.exit(0)
 	
         #wrd = "GAMEEND"	
 	if (wrd == "GAMEEND"):
