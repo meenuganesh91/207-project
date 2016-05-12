@@ -4,8 +4,6 @@
 The client gui application
 """
 
-#import wxversion
-#wxversion.select("3.0")
 import wx
 import time
 import socket
@@ -82,11 +80,12 @@ class MainPanel(wx.Frame):
         self.OnConnectInit(code)
         
     def OnSignup(self, e):
-	global sock
+	code = '1'
 	blank = ""
 	self.errorMsg.SetLabel("Welcome to Mind Sync")
+	global sock
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	sock.settimeout(30.0)
+	#sock.settimeout(30.0)
 	host = socket.gethostbyname(sys.argv[1])
 	mPort = 8777
 	sPort = 8778
@@ -97,7 +96,6 @@ class MainPanel(wx.Frame):
     	except:
 		sock.connect(sAddress)
   
-	code = '1'
 	self.OnConnectInit(code)        
 
     def OnConnectInit(self,code): 
@@ -108,9 +106,8 @@ class MainPanel(wx.Frame):
 	
 	print 'Server Format: ', serverFormat
 	if(self.tc1.GetValue() == "" or self.tc2.GetValue() == ""):
-		errorMsg = wx.StaticText(self.panel, label="User name or password cannot be empty", 
-			pos = (150, 350))
-		errorMsg.SetForegroundColour((255,0,0))	
+		err = "User name/password cannot be empty!"
+		self.errorMsg.SetLabel(err)
 	sock.recv(1024)
 
         sock.send(serverFormat)
@@ -118,8 +115,9 @@ class MainPanel(wx.Frame):
         
 	errCode = sock.recv(1024)
 	print "Error code : ", errCode
+	print
 	
-	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" or errCode == "USER_NAME_TAKEN" or errCode == "USER_ALREADY_LOGGED"):
+	if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR" or errCode == "USER_NAME_TAKEN" or errCode == "USER_ALREADY_LOGGED" or errCode == "INVALID_USER_INPUT"):
 		if(errCode == "USER_NAME_ERROR" or errCode == "PASSWORD_ERROR"):
 			err = "Wrong User name or password"
 			self.errorMsg.SetLabel(err)
@@ -132,14 +130,19 @@ class MainPanel(wx.Frame):
 			err = "User already logged in"
 			self.errorMsg.SetLabel(err)
 			
+		elif  (errCode == "INVALID_USER_INPUT"):
+			err = "Invalid user input"
+			self.errorMsg.SetLabel(err)
 
 		sock.close()
 		self.loginbut.Bind(wx.EVT_BUTTON, self.OnLogin)
 		self.signupbut.Bind(wx.EVT_BUTTON, self.OnSignup)
 
-	else:   
+	else:
+		self.errorMsg.SetLabel("You are successfully logged in")   
 		print "Success going to second panel"
 		global USER_STATS 
+		time.sleep(2)
 		USER_STATS = sock.recv(1024)
 		print "Stats ", USER_STATS
 
@@ -156,7 +159,7 @@ class SecondPanel(wx.Frame):
 
     def __init__(self, parent, title):
         super(SecondPanel, self).__init__(parent, title=title, 
-            size=(550, 700))
+            size=(600, 700))
         self.pnl = wx.Panel(self)
 
 	#self.pnl.SetBackgroundColour((237,125,49))
@@ -308,6 +311,10 @@ class SecondPanel(wx.Frame):
 		words = response.split("_")
 		wrd = words[0]
 		print "receive end" + wrd
+		'''response = sock.recv(1024)
+		words = response.split("_")
+		wrd = words[0]
+		print "receive end" + wrd'''
 	
 	self.wordSizer.SetLabel(wrd)
 	font = wx.Font(25,wx.DECORATIVE, wx.ITALIC, wx.NORMAL)
