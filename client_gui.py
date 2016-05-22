@@ -274,6 +274,9 @@ class SecondPanel(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.onTimer, self.timer)
         self.timer.Start(1000)
 
+    '''
+    Function to display timer and reset the new word received from the server on time out
+    ''' 
     def onTimer(self, e):
 
         self.counter -= 1
