@@ -73,8 +73,8 @@ class MainPanel(wx.Frame):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = socket.gethostbyname(sys.argv[1])
     
-        mPort = 8777
-        sPort = 8778
+	mPort = int(sys.argv[2])
+	sPort = int(sys.argv[3])
         mAddress = (host,mPort)
         sAddress = (host,sPort)
         try:
@@ -96,8 +96,8 @@ class MainPanel(wx.Frame):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = socket.gethostbyname(sys.argv[1])
     
-        mPort = 8777
-        sPort = 8778
+	mPort = int(sys.argv[2])
+	sPort = int(sys.argv[3])
         mAddress = (host,mPort)
         sAddress = (host,sPort)
         try:
