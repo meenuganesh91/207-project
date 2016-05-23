@@ -31,7 +31,7 @@
 #define	LENGTH		2000
 #define NUM_THREADS 2000
 
-// This would act as protocol between client and server.
+// This acts as protocol between client and server.
 #define USERNAMEERROR "USER_NAME_ERROR"
 #define PASSWORDERROR	"PASSWORD_ERROR"
 #define USERNAMEVALID	"USER_NAME_VALID"
@@ -52,7 +52,8 @@
 #define HIGH_PRIORITY_PORT string("9000")
 #define LOW_PRIORITY_PORT string("9001")
 
-#define REFRESH_RATE 15
+#define DB_REFRESH_RATE 30
+#define SERVER_COMM_RATE 15
 
 #define TO_LOWER(s) std::transform(s.begin(), s.end(), s.begin(), ::tolower)
 
@@ -66,10 +67,8 @@ string trim(string);
 vector<string> split(string str, char delimiter);
 
 
-//
 // Class for lock protected operations on socket descriptors.
 // This also serves as the current state of the server.
-//
 class ProtectedSockets {
 	private:
     std::mutex mutex;
@@ -354,6 +353,7 @@ int validateClientUsername(int sd, string& username) {
     string repassWord;	
     string msg;
 
+	// This is required for testing server using telnet.
     strcpy(outBuf, "Enter the action:username:password combination\n");
     write(sd, outBuf, strlen(outBuf));
     if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
@@ -371,7 +371,7 @@ int validateClientUsername(int sd, string& username) {
 	string userName = trim(clInput[1]);
 	string passWord = trim(clInput[2]);
 	
-	cout << "Entered sign-in input:" << input << " Username:" << userName << " Password: " << passWord << endl;
+	cout << "Entered client input:" << input << " Username:" << userName << " Password: " << passWord << endl;
     if (input.compare("1") == 0) {
     	int index = Database::searchUserIndex(userName);
 
@@ -403,6 +403,7 @@ int validateClientUsername(int sd, string& username) {
 				WRITE_OUT_BUFFER
 				isValid = 0;
 			} else {
+				// Check for already logged in user.
 				user = (*(Database::users))[user_index];
 				if (active_connections.if_user_alive(username)) {
 					cout << username << " is already logged in"	<< endl;
@@ -518,9 +519,9 @@ void* gameHandler(void* game_players) {
 
 	signal(SIGPIPE, SIG_IGN);
 	while(1) {
-		// TODO(sanisha): These were not functioning correctly, therefore, I 
-		//                have commented them out, may explore later if we
-		//                could leverage these.
+		// These were not functioning correctly, therefore,
+		// commenting them out, may explore later if we
+		// could leverage these.
 		// Check if both the sockets are alive/valid.
 		// int errorCode1 = -1, errorCode2 = -1;
 		// socklen_t len = sizeof (errorCode1);
@@ -551,6 +552,7 @@ void* gameHandler(void* game_players) {
 
 		write(fd1, message1.c_str(), message1.length());
 		cout << "Last reponse stats sent to player1:" << message1 << endl;
+		// Check for player 1 termination.
 		if (errno != 0) {
 			message2 = "GAMEEND_" +  message_suffix_2;
 			write(fd2, message2.c_str(), message2.length());
@@ -568,6 +570,7 @@ void* gameHandler(void* game_players) {
 		errno = 0;
 		cout << "Going to write to " << "username:fd = " << username2 << ":" << fd2 << endl;
 		write(fd2, message2.c_str(), message2.length());
+		// Check for player 2 termination
 		cout << "Last reponse stats sent to player1:" << message1 << endl;
 		if (errno != 0) {
 			message1 = "GAMEEND_" + message_suffix_1;
@@ -590,7 +593,7 @@ void* gameHandler(void* game_players) {
 			break;
 		}
 		response1 = trim(string(inBuf));
-		// If client dies, it send empty string
+		// If client dies, it sends empty string
 		if (response1.compare("") == 0) {
 			errno = 0;
 			write(fd1, "1", 1);
@@ -671,7 +674,7 @@ void* gameHandler(void* game_players) {
 
 void* syncMemoryToDb(void*) {
 	while(1) {
-		sleep(REFRESH_RATE);
+		sleep(DB_REFRESH_RATE);
 		cout << "##### Sinking game state to database for all users" << endl;
 		Database::syncToDb();
 	}
@@ -683,8 +686,8 @@ void* syncMemoryToDb(void*) {
 */
 void * 
 startNewGames(void* ) {
-  // Read words file.
-  readWordsFile();
+  	// Read words file.
+  	readWordsFile();
 	
 	// Seed the random number.
 	srand(time(0));
@@ -692,11 +695,9 @@ startNewGames(void* ) {
 	while(1) {
 		if (active_connections.free_players_count() >= 2) {
 			pair<string, int> player1 = active_connections.get_free_player();
-			// TODO(sanisha): There is a potential problem here, if active player count has decreased by the time control reaches here.
-     		// i.e. after check up there in if statement. But it is not a big concern so don't worry.
 			pair<string, int> player2 = active_connections.get_free_player();
 			
-			cout << " Player1: " << player1.first << ":" << player1.second << " and Player2: " << player2.first << ":" << player2.second << endl;
+			cout << "Player1: " << player1.first << ":" << player1.second << " and Player2: " << player2.first << ":" << player2.second << endl;
 			
 			// Start new game for these two players.
 			GamePlayers gp;
@@ -806,6 +807,7 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 	int sd;
 	if (is_high_priority_server) {
 		while(1) {
+			// Create socket for communicating with other server port.
 			cout << "Trying to connect to " << LOW_PRIORITY_PORT << endl;
 			sd = connectTCP("localhost", LOW_PRIORITY_PORT.c_str());
 			if (sd == -1) {
@@ -818,10 +820,10 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 			write(sd, are_u_master.c_str(), are_u_master.size());
 			char inBuf[BUFSIZE + 1];
 			int recvLen;
-  	  if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
+  	  		if ((recvLen = read(sd, inBuf, BUFSIZE)) > 0) { 
 				inBuf[recvLen] = '\0';        
-    	}
-    	string input = trim(string(inBuf));
+    		}
+    		string input = trim(string(inBuf));
 			cout << "Received " << input << " from " << LOW_PRIORITY_PORT << endl;
 			if (input.compare("NO") == 0) {
 				is_master = true;
@@ -829,10 +831,11 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 				break;
 			}
 			close(sd);
-			sleep(REFRESH_RATE);
+			sleep(SERVER_COMM_RATE);
 		}	
 	} else {
 		while(1) {
+			// Create socket for communicating with other server port.
 			cout << "Trying to connect to " << HIGH_PRIORITY_PORT << endl;
 			sd = connectTCP("localhost", HIGH_PRIORITY_PORT.c_str());
 			if (sd == -1) {
@@ -840,7 +843,7 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 			}
 			close(sd);
 			if(!is_master) {
-				sleep(REFRESH_RATE);
+				sleep(SERVER_COMM_RATE);
 			} else {
 				break;
 			}
@@ -849,16 +852,13 @@ void* startMasterSlaveCommunication(void* my_server_interaction_port) {
 	return 0;
 }
 
-/*
- * main: Main function to get client's requests and create threads for every
- * new game.
-*/
+// Main function to get client's requests, create threads for different operations.
 int main(int argc, char *argv[])
 {
  	pthread_attr_t ta;
 	pthread_t th;
 	
-	char *service, *server_interaction_port;		/* service name or port number */
+	char *service, *server_interaction_port;    //service name or port number
 	int msock, ssock;
 	
 	struct sockaddr_in clientAddr;
@@ -930,6 +930,4 @@ int main(int argc, char *argv[])
 		}
 	}
 }
-
-
 
